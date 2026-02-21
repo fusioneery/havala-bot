@@ -1,4 +1,4 @@
-import { ArrowDown } from 'lucide-react';
+import { ArrowUpDown } from 'lucide-react';
 
 interface SwapButtonProps {
   onSwap: () => void;
@@ -10,9 +10,9 @@ export function SwapButton({ onSwap }: SwapButtonProps) {
       <div className="w-14 h-14 bg-background rounded-full flex items-center justify-center p-1.5 pointer-events-auto">
         <button
           onClick={onSwap}
-          className="w-full h-full rounded-full bg-surface-hover hover:bg-lime hover:text-background text-white flex items-center justify-center transition-all duration-300 shadow-lg group border border-background"
+          className="w-full h-full rounded-full bg-lime hover:bg-lime-hover text-foreground flex items-center justify-center transition-all duration-300 shadow-lg group border border-background"
         >
-          <ArrowDown className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
+          <ArrowUpDown className="w-5 h-5 transition-transform duration-500" />
         </button>
       </div>
     </div>

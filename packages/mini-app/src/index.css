@@ -47,16 +47,68 @@
     /* Hawala brand colors */
     --color-lime: #C8F135;
     --color-lime-hover: #D4F64D;
-    --color-surface: #2C2C2E;
-    --color-surface-hover: #3A3A3C;
-    --color-surface-active: #48484A;
-    --color-label: #8E8E93;
-    --color-label-dim: #636366;
+    --color-surface: var(--color-surface);
+    --color-surface-hover: var(--color-surface-hover);
+    --color-surface-active: var(--color-surface-active);
+    --color-label: var(--color-label);
+    --color-label-dim: var(--color-label-dim);
+    --color-pill-bg: var(--color-pill-bg);
+    --color-pill-active: var(--color-pill-active);
+    --color-pill-active-text: var(--color-pill-active-text);
+    --color-cta-bg: var(--color-cta-bg);
+    --color-cta-text: var(--color-cta-text);
 }
 
 :root {
     --radius: 0.625rem;
-    /* Dark-first — this app is always dark (Telegram Mini App) */
+    /* Light theme (default) */
+    --background: #FFFFFF;
+    --foreground: #1C1C1E;
+    --card: #F5F5F5;
+    --card-foreground: #1C1C1E;
+    --popover: #FFFFFF;
+    --popover-foreground: #1C1C1E;
+    --primary: #1C1C1E;
+    --primary-foreground: #FFFFFF;
+    --secondary: #F0F0F0;
+    --secondary-foreground: #1C1C1E;
+    --muted: #F5F5F5;
+    --muted-foreground: #8E8E93;
+    --accent: #E8E8E8;
+    --accent-foreground: #1C1C1E;
+    --destructive: #FF453A;
+    --border: rgba(0, 0, 0, 0.08);
+    --input: #F0F0F0;
+    --ring: #C8F135;
+    --chart-1: #C8F135;
+    --chart-2: #26A17B;
+    --chart-3: #0052B4;
+    --chart-4: #FF9500;
+    --chart-5: #FF453A;
+    --sidebar: #F5F5F5;
+    --sidebar-foreground: #1C1C1E;
+    --sidebar-primary: #1C1C1E;
+    --sidebar-primary-foreground: #FFFFFF;
+    --sidebar-accent: #E8E8E8;
+    --sidebar-accent-foreground: #1C1C1E;
+    --sidebar-border: rgba(0, 0, 0, 0.08);
+    --sidebar-ring: #C8F135;
+
+    /* Light theme brand overrides */
+    --color-surface: #F5F5F5;
+    --color-surface-hover: #EBEBEB;
+    --color-surface-active: #E0E0E0;
+    --color-label: #8E8E93;
+    --color-label-dim: #AEAEB2;
+    --color-pill-bg: #FFFFFF;
+    --color-pill-active: #1C1C1E;
+    --color-pill-active-text: #FFFFFF;
+    --color-cta-bg: #1C1C1E;
+    --color-cta-text: #FFFFFF;
+}
+
+.dark {
+    /* Dark theme */
     --background: #1C1C1E;
     --foreground: #FFFFFF;
     --card: #2C2C2E;
@@ -88,6 +140,18 @@
     --sidebar-accent-foreground: #FFFFFF;
     --sidebar-border: rgba(255, 255, 255, 0.05);
     --sidebar-ring: #C8F135;
+
+    /* Dark theme brand overrides */
+    --color-surface: #2C2C2E;
+    --color-surface-hover: #3A3A3C;
+    --color-surface-active: #48484A;
+    --color-label: #8E8E93;
+    --color-label-dim: #636366;
+    --color-pill-bg: #3A3A3C;
+    --color-pill-active: #1C1C1E;
+    --color-pill-active-text: #FFFFFF;
+    --color-cta-bg: #C8F135;
+    --color-cta-text: #1C1C1E;
 }
 
 @layer base {
@@ -108,7 +172,7 @@
     -webkit-appearance: none;
     width: 100%;
     height: 6px;
-    background: #2C2C2E;
+    background: var(--muted);
     border-radius: 999px;
     outline: none;
     background-image: linear-gradient(#C8F135, #C8F135);
@@ -123,7 +187,7 @@
     border-radius: 50%;
     background: #C8F135;
     cursor: pointer;
-    border: 4px solid #1C1C1E;
+    border: 4px solid var(--background);
     box-shadow: 0 0 0 1px #C8F135;
     transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -138,7 +202,7 @@
     border-radius: 50%;
     background: #C8F135;
     cursor: pointer;
-    border: 4px solid #1C1C1E;
+    border: 4px solid var(--background);
     box-shadow: 0 0 0 1px #C8F135;
 }
 

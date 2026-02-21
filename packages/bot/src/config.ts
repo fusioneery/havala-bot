@@ -1,4 +1,8 @@
-import 'dotenv/config';
+import path from 'node:path';
+import { config as loadEnv } from 'dotenv';
+
+// Load .env from monorepo root (Bun runs from packages/bot)
+loadEnv({ path: path.resolve(import.meta.dir, '../../../.env') });
 
 export const config = {
   botToken: process.env.BOT_TOKEN!,
@@ -13,4 +17,5 @@ export const config = {
   messageBatchSize: Number(process.env.MESSAGE_BATCH_SIZE) || 5,
   port: Number(process.env.PORT) || 3000,
   isProd: process.env.NODE_ENV === 'production',
+  miniAppUrl: process.env.MINI_APP_URL!,
 } as const;

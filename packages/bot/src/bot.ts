@@ -3,6 +3,15 @@ import { config } from './config';
 
 export const bot = new Bot(config.botToken);
 
+// Log chat/group ID for every incoming message (debug groups we're member of)
+bot.use(async (ctx, next) => {
+  const chat = ctx.chat;
+  if (chat && ['group', 'supergroup'].includes(chat.type)) {
+    console.log(`[Group message] chatId=${chat.id} type=${chat.type} title=${'title' in chat ? chat.title : 'N/A'}`);
+  }
+  return next();
+});
+
 // /start command
 bot.command('start', async (ctx) => {
   const user = ctx.from;
@@ -15,7 +24,7 @@ bot.command('start', async (ctx) => {
     {
       reply_markup: {
         inline_keyboard: [
-          [{ text: 'Open Mini App', web_app: { url: 'https://YOUR_DOMAIN/app' } }],
+          [{ text: 'Open Mini App', web_app: { url: config.miniAppUrl } }],
         ],
       },
     },

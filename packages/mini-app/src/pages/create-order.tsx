@@ -1,23 +1,34 @@
-import { useState, useCallback } from 'react';
-import { X, MoreHorizontal } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import type { Visibility } from '@hawala/shared';
+import { RubIcon, UsdtIcon, getCurrencyColor } from '@/components/order/currency-icons';
 import { CurrencyInput } from '@/components/order/currency-input';
-import { SwapButton } from '@/components/order/swap-button';
 import { SplitSlider } from '@/components/order/split-slider';
+import { SwapButton } from '@/components/order/swap-button';
 import { VisibilitySelector } from '@/components/order/visibility-selector';
-import { UsdtIcon, RubIcon, getCurrencyColor } from '@/components/order/currency-icons';
+import type { Visibility } from '@hawala/shared';
+import { Search } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 
 export default function CreateOrderPage() {
-  const navigate = useNavigate();
-
   // ─── Form state ────────────────────────────
-  const [fromAmount, setFromAmount] = useState('1,000');
-  const [toAmount, setToAmount] = useState('92,000');
+  const [fromAmount, setFromAmount] = useState('1 000');
+  const [toAmount, setToAmount] = useState('92 000');
   const [fromCurrency, setFromCurrency] = useState('USDT');
   const [toCurrency, setToCurrency] = useState('RUB');
-  const [splitPercent, setSplitPercent] = useState(50);
+  const [minExchangeAmount, setMinExchangeAmount] = useState('0');
   const [visibility, setVisibility] = useState<Visibility>('friends_and_acquaintances');
+
+  // ─── Clamp minExchangeAmount when fromAmount changes ───
+  useEffect(() => {
+    const parseAmount = (str: string) => Number(str.replace(/[^\d.]/g, '')) || 0;
+    const formatAmount = (num: number) =>
+      Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    
+    const max = parseAmount(fromAmount);
+    const current = parseAmount(minExchangeAmount);
+    
+    if (current > max) {
+      setMinExchangeAmount(formatAmount(max));
+    }
+  }, [fromAmount, minExchangeAmount]);
 
   // ─── Swap currencies ───────────────────────
   const handleSwap = useCallback(() => {
@@ -25,6 +36,7 @@ export default function CreateOrderPage() {
     setToAmount(fromAmount);
     setFromCurrency(toCurrency);
     setToCurrency(fromCurrency);
+    setMinExchangeAmount(toAmount);
   }, [fromAmount, toAmount, fromCurrency, toCurrency]);
 
   // ─── Submit ────────────────────────────────
@@ -35,35 +47,24 @@ export default function CreateOrderPage() {
       toAmount,
       fromCurrency,
       toCurrency,
-      splitPercent,
+      minExchangeAmount,
       visibility,
     });
-  }, [fromAmount, toAmount, fromCurrency, toCurrency, splitPercent, visibility]);
+  }, [fromAmount, toAmount, fromCurrency, toCurrency, minExchangeAmount, visibility]);
 
   // ─── Currency icon renderers ───────────────
-  const fromIcon = fromCurrency === 'USDT' ? <UsdtIcon /> : undefined;
-  const toIcon = toCurrency === 'RUB' ? <RubIcon /> : undefined;
+  const getIcon = (currency: string) => {
+    if (currency === 'USDT') return <UsdtIcon />;
+    if (currency === 'RUB') return <RubIcon />;
+    return undefined;
+  };
+  const fromIcon = getIcon(fromCurrency);
+  const toIcon = getIcon(toCurrency);
 
   return (
-    <div className="w-full h-dvh flex flex-col bg-background text-white">
-      {/* ── Header ── */}
-      <header className="flex items-center justify-between px-6 pt-8 pb-4 bg-background sticky top-0 z-30">
-        <button
-          onClick={() => navigate(-1)}
-          className="w-10 h-10 rounded-full bg-surface text-[#E5E5EA] flex items-center justify-center hover:bg-surface-hover transition active:scale-95"
-        >
-          <X className="w-[18px] h-[18px]" strokeWidth={2.5} />
-        </button>
-        <h1 className="text-[17px] font-semibold tracking-tight text-white">
-          Создать заявку
-        </h1>
-        <button className="w-10 h-10 rounded-full bg-surface text-[#E5E5EA] flex items-center justify-center hover:bg-surface-hover transition active:scale-95">
-          <MoreHorizontal className="w-5 h-5" strokeWidth={2.5} />
-        </button>
-      </header>
-
+    <div className="w-full h-dvh flex flex-col bg-background text-foreground">
       {/* ── Scrollable content ── */}
-      <main className="flex-1 overflow-y-auto no-scrollbar px-4 pb-32">
+      <main className="flex-1 overflow-y-auto no-scrollbar px-4 pt-6 pb-32">
         {/* ── Currency pair cards ── */}
         <div className="flex flex-col gap-2 relative mt-4">
           <CurrencyInput
@@ -71,10 +72,9 @@ export default function CreateOrderPage() {
             value={fromAmount}
             onChange={setFromAmount}
             currency={fromCurrency}
+            onCurrencyChange={setFromCurrency}
             currencyColor={getCurrencyColor(fromCurrency)}
             currencyIcon={fromIcon}
-            onCurrencyClick={() => {/* TODO: open currency picker */}}
-            balance="4,200"
             className="pb-8"
           />
 
@@ -85,26 +85,32 @@ export default function CreateOrderPage() {
             value={toAmount}
             onChange={setToAmount}
             currency={toCurrency}
+            onCurrencyChange={setToCurrency}
             currencyColor={getCurrencyColor(toCurrency)}
             currencyIcon={toIcon}
-            onCurrencyClick={() => {/* TODO: open currency picker */}}
             className="pt-8"
           />
         </div>
 
-        {/* ── Split slider ── */}
-        <SplitSlider value={splitPercent} onChange={setSplitPercent} />
+        {/* ── Minimum exchange amount ── */}
+        <SplitSlider
+          value={minExchangeAmount}
+          onChange={setMinExchangeAmount}
+          maxAmount={fromAmount}
+          currency={fromCurrency}
+        />
 
         {/* ── Visibility selector ── */}
-        <VisibilitySelector value={visibility} onChange={setVisibility} />
+        <VisibilitySelector value={visibility} onChange={setVisibility} groupName="Hawala обмен" />
       </main>
 
       {/* ── Fixed bottom CTA ── */}
       <div className="fixed bottom-0 left-0 w-full p-5 pb-8 bg-gradient-to-t from-background via-background to-transparent z-40 pointer-events-none">
         <button
           onClick={handleSubmit}
-          className="pointer-events-auto w-full bg-lime hover:bg-lime-hover text-background h-[60px] rounded-[24px] font-bold text-[18px] active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-[0_8px_30px_rgba(200,241,53,0.2)]"
+          className="pointer-events-auto w-full bg-primary hover:opacity-90 text-primary-foreground h-[60px] rounded-[24px] font-bold text-[18px] active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg"
         >
+          <Search className="w-5 h-5" />
           Искать
         </button>
       </div>
