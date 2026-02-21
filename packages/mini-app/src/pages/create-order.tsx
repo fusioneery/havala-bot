@@ -1,11 +1,13 @@
 import { RubIcon, UsdtIcon, getCurrencyColor } from '@/components/order/currency-icons';
-import { CurrencyInput } from '@/components/order/currency-input';
+import { CurrencyInput, formatWithSpaces } from '@/components/order/currency-input';
+import { RateSelector, type RateSource } from '@/components/order/rate-selector';
 import { SplitSlider } from '@/components/order/split-slider';
 import { SwapButton } from '@/components/order/swap-button';
 import { VisibilitySelector } from '@/components/order/visibility-selector';
+import { AccordionSection } from '@/components/ui/accordion-section';
 import type { Visibility } from '@hawala/shared';
 import { Search } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 export default function CreateOrderPage() {
   // ─── Form state ────────────────────────────
@@ -15,6 +17,80 @@ export default function CreateOrderPage() {
   const [toCurrency, setToCurrency] = useState('RUB');
   const [minExchangeAmount, setMinExchangeAmount] = useState('0');
   const [visibility, setVisibility] = useState<Visibility>('friends_and_acquaintances');
+
+  // ─── Rate state ──────────────────────────────
+  const [rateSource, setRateSource] = useState<RateSource>('vas3k');
+  const [customRate, setCustomRate] = useState('');
+  const [vas3kRate, setVas3kRate] = useState<number | null>(null);
+  const [googleRate, setGoogleRate] = useState<number | null>(null);
+  const [ratesLoading, setRatesLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('https://kurs.vas3k.club/current-rates.json')
+      .then((res) => res.json())
+      .then((data) => {
+        const v = parseFloat(data.vas3k.rate);
+        const g = parseFloat(data.google.rate);
+        setVas3kRate(v);
+        setGoogleRate(g);
+        setCustomRate(v.toFixed(2));
+      })
+      .catch(console.error)
+      .finally(() => setRatesLoading(false));
+  }, []);
+
+  const effectiveRate = useMemo(() => {
+    if (rateSource === 'vas3k') return vas3kRate;
+    if (rateSource === 'google') return googleRate;
+    return parseFloat(customRate) || null;
+  }, [rateSource, vas3kRate, googleRate, customRate]);
+
+  // ─── Recalculate toAmount when rate or fromAmount changes ───
+  useEffect(() => {
+    if (!effectiveRate || effectiveRate <= 0) return;
+    const from = Number(fromAmount.replace(/[^\d.]/g, '')) || 0;
+    if (from <= 0) return;
+
+    let result: number;
+    if (fromCurrency === 'USDT' && toCurrency === 'RUB') {
+      result = from * effectiveRate;
+    } else if (fromCurrency === 'RUB' && toCurrency === 'USDT') {
+      result = from / effectiveRate;
+    } else {
+      return;
+    }
+
+    const str = result >= 100 ? Math.round(result).toString() : result.toFixed(2);
+    setToAmount(formatWithSpaces(str));
+  }, [fromAmount, effectiveRate, fromCurrency, toCurrency]);
+
+  const ratePreview = useMemo(() => {
+    if (ratesLoading) return '...';
+    const labels: Record<RateSource, string> = {
+      vas3k: 'равновесный',
+      google: 'Google',
+      custom: 'свой',
+    };
+    const rate = effectiveRate?.toFixed(2) ?? '—';
+    return `${rate} ₽ — ${labels[rateSource]}`;
+  }, [effectiveRate, rateSource, ratesLoading]);
+
+  const visibilityLabels: Record<Visibility, string> = {
+    friends_and_acquaintances: 'Друзья и знакомые',
+    friends_only: 'Только друзья',
+  };
+
+  const splitPreview = useCallback(
+    (open: boolean) => {
+      const parse = (s: string) => Number(s.replace(/[^\d.]/g, '')) || 0;
+      const max = parse(fromAmount);
+      const current = parse(minExchangeAmount);
+      if (current <= 0) return 'любая';
+      if (current >= max) return 'только полная';
+      return open ? undefined : `${minExchangeAmount} ${fromCurrency}`;
+    },
+    [minExchangeAmount, fromAmount, fromCurrency],
+  );
 
   // ─── Clamp minExchangeAmount when fromAmount changes ───
   useEffect(() => {
@@ -47,10 +123,12 @@ export default function CreateOrderPage() {
       toAmount,
       fromCurrency,
       toCurrency,
+      rate: effectiveRate,
+      rateSource,
       minExchangeAmount,
       visibility,
     });
-  }, [fromAmount, toAmount, fromCurrency, toCurrency, minExchangeAmount, visibility]);
+  }, [fromAmount, toAmount, fromCurrency, toCurrency, effectiveRate, rateSource, minExchangeAmount, visibility]);
 
   // ─── Currency icon renderers ───────────────
   const getIcon = (currency: string) => {
@@ -92,16 +170,35 @@ export default function CreateOrderPage() {
           />
         </div>
 
+        {/* ── Exchange rate ── */}
+        <AccordionSection title="Курс" preview={ratePreview} className="mt-6">
+          <RateSelector
+            source={rateSource}
+            onSourceChange={setRateSource}
+            customRate={customRate}
+            onCustomRateChange={setCustomRate}
+            vas3kRate={vas3kRate}
+            googleRate={googleRate}
+            loading={ratesLoading}
+          />
+        </AccordionSection>
+
         {/* ── Minimum exchange amount ── */}
-        <SplitSlider
-          value={minExchangeAmount}
-          onChange={setMinExchangeAmount}
-          maxAmount={fromAmount}
-          currency={fromCurrency}
-        />
+        <AccordionSection title="Минимальная сумма обмена" preview={splitPreview} className="mt-2">
+          <SplitSlider
+            value={minExchangeAmount}
+            onChange={setMinExchangeAmount}
+            maxAmount={fromAmount}
+            currency={fromCurrency}
+            toMaxAmount={toAmount}
+            toCurrency={toCurrency}
+          />
+        </AccordionSection>
 
         {/* ── Visibility selector ── */}
-        <VisibilitySelector value={visibility} onChange={setVisibility} groupName="Hawala обмен" />
+        <AccordionSection title="Круг поиска" preview={visibilityLabels[visibility]} className="mt-2">
+          <VisibilitySelector value={visibility} onChange={setVisibility} groupName="Hawala обмен" />
+        </AccordionSection>
       </main>
 
       {/* ── Fixed bottom CTA ── */}

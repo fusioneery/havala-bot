@@ -2,7 +2,7 @@ node_modules/
 dist/
 .bun/
 *.db
-*.db-journal
+*.db-*
 .env
 .DS_Store
 bun.lock

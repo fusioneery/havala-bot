@@ -5,6 +5,8 @@ interface MinExchangeAmountProps {
   onChange: (value: string) => void;
   maxAmount: string;
   currency: string;
+  toMaxAmount: string;
+  toCurrency: string;
 }
 
 function parseAmount(str: string): number {
@@ -15,10 +17,13 @@ function formatAmount(num: number): string {
   return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 }
 
-export function SplitSlider({ value, onChange, maxAmount, currency }: MinExchangeAmountProps) {
+export function SplitSlider({ value, onChange, maxAmount, currency, toMaxAmount, toCurrency }: MinExchangeAmountProps) {
   const sliderRef = useRef<HTMLInputElement>(null);
   const max = parseAmount(maxAmount);
+  const toMax = parseAmount(toMaxAmount);
   const currentValue = parseAmount(value);
+  const rate = max > 0 ? toMax / max : 0;
+  const convertedAmount = Math.round(currentValue * rate);
   
   const percent = max > 0 ? Math.round((currentValue / max) * 100) : 100;
   
@@ -79,33 +84,27 @@ export function SplitSlider({ value, onChange, maxAmount, currency }: MinExchang
   };
 
   return (
-    <div className="mt-8 px-2">
-      <div className="flex justify-between items-center mb-2">
-        <label className="text-[17px] font-semibold leading-none text-foreground">
-          Минимальная сумма обмена
-        </label>
-        <div className="flex items-center gap-2">
-          {percent === 0 ? (
-            <span className="h-10 px-3 flex items-center text-[17px] font-bold text-muted-foreground">любая</span>
-          ) : percent === 100 ? (
-            <span className="h-10 px-3 flex items-center text-[17px] font-bold text-muted-foreground">только полная</span>
-          ) : (
-            <>
-              <input
-                type="text"
-                inputMode="numeric"
-                value={inputValue}
-                onChange={handleInputChange}
-                onBlur={handleInputBlur}
-                className="w-24 h-10 px-3 text-right text-[17px] font-bold bg-card border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-foreground"
-              />
-              <span className="text-[15px] text-muted-foreground font-medium min-w-[50px]">
-                {currency}
-              </span>
-            </>
-          )}
+    <div className="px-2">
+      {percent > 0 && percent < 100 && (
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-[15px] text-muted-foreground">
+            ≈ {formatAmount(convertedAmount)} {toCurrency}
+          </span>
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              inputMode="numeric"
+              value={inputValue}
+              onChange={handleInputChange}
+              onBlur={handleInputBlur}
+              className="w-24 h-10 px-3 text-right text-[17px] font-bold bg-card border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-foreground"
+            />
+            <span className="text-[15px] text-muted-foreground font-medium min-w-[50px]">
+              {currency}
+            </span>
+          </div>
         </div>
-      </div>
+      )}
 
       {error && (
         <p className="text-destructive text-[13px] mb-3 text-right">{error}</p>
