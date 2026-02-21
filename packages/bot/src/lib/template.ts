@@ -15,13 +15,14 @@ export function resolveTemplate(template: string, params: TemplateParams): strin
     .replace(/\{GIVE_AMOUNT\}/g, params.giveAmount)
     .replace(/\{GIVE_CURRENCY\}/g, params.giveCurrency)
     .replace(/\{GIVE_PAYMENT_METHOD\}/g, params.givePaymentMethod)
-    .replace(/\\n/g, '\n');
+    .replace(/\\n/g, '\n')
+    .replace(/ {2,}/g, ' ');
 }
 
 const CRYPTO_CURRENCIES = new Set(['USDT', 'USDC', 'BTC', 'ETH', 'TON']);
 
 export function getPaymentMethodLabel(currency: string): string {
-  if (currency === 'RUB') return 'СБП';
-  if (CRYPTO_CURRENCIES.has(currency)) return 'Crypto';
-  return 'SWIFT/SEPA';
+  if (currency === 'RUB') return 'по СБП (любой банк)';
+  if (CRYPTO_CURRENCIES.has(currency)) return '';
+  return 'по SWIFT/SEPA';
 }

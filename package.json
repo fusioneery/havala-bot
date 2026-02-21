@@ -3,7 +3,8 @@
   "private": true,
   "workspaces": ["packages/*"],
   "scripts": {
-    "dev": "concurrently -n bot,app -c blue,green \"bun run --filter @hawala/bot dev\" \"bun run --filter @hawala/mini-app dev\"",
+    "dev": "concurrently -n bot,app -c blue,green \"bun run --filter @hawala/bot dev\" \"bun run --filter @hawala/mini-app dev\" 2>&1 | tee .dev.log",
+    "dev:bot": "bun run --filter @hawala/bot dev",
     "build": "bun run --filter @hawala/mini-app build",
     "db:generate": "bun run --filter @hawala/bot db:generate",
     "db:push": "bun run --filter @hawala/bot db:push"

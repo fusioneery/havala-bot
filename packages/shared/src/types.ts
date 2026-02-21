@@ -28,6 +28,7 @@ export type OfferStatus = 'active' | 'matched' | 'cancelled' | 'error';
 export type UserOfferStatus = 'active' | 'matched' | 'cancelled';
 export type MatchStatus = 'pending' | 'accepted' | 'error_flagged';
 export type Visibility = 'friends_only' | 'friends_and_acquaintances';
+export type MatchSource = 'group_message' | 'hawala';
 
 export interface Offer {
   id: number;
@@ -60,6 +61,34 @@ export interface UserOffer {
   updatedAt: Date;
 }
 
+export interface MyOfferMatchItem {
+  author: {
+    firstName: string;
+    username: string | null;
+    avatarUrl: string | null;
+  };
+  trustType: TrustType | null;
+  groupName: string;
+  telegramMessageLink: string | null;
+  matchSource?: MatchSource;
+}
+
+export interface MyOfferItem {
+  id: number;
+  fromCurrency: string;
+  toCurrency: string;
+  amount: number;
+  status: UserOfferStatus;
+  matchCount: number;
+  createdAt: string;
+  paymentMethods: {
+    give: { currency: string; methods: PaymentMethodGroup[] }[];
+    take: { currency: string; methods: PaymentMethodGroup[] }[];
+  };
+  topMatch: MyOfferMatchItem | null;
+  allMatches: MyOfferMatchItem[];
+}
+
 // ─── LLM ─────────────────────────────────────
 export interface GroupMessage {
   index: number;
@@ -69,13 +98,46 @@ export interface GroupMessage {
   chatId: number;
 }
 
+export interface ParsedPaymentMethodGroup {
+  currency: Currency;
+  methods: PaymentMethodGroup[];
+}
+
 export interface ParsedOffer {
   messageIndex: number;
   isExchangeOffer: boolean;
   amount: number | null;
-  fromCurrency: Currency | null;
-  toCurrency: Currency | null;
-  paymentMethods: PaymentMethodGroup[];
+  amountCurrency: Currency | null;
+  takePaymentMethods: ParsedPaymentMethodGroup[];
+  givePaymentMethods: ParsedPaymentMethodGroup[];
+  partial: boolean;
+  partialThreshold: number;
+}
+
+// ─── Contacts ───────────────────────────────
+export interface ContactListItem {
+  id: number;
+  type: TrustType;
+  user: {
+    id: number;
+    telegramId: number;
+    username: string | null;
+    firstName: string;
+    avatarUrl: string | null;
+  };
+}
+
+export interface AddContactRequest {
+  targetUserId: number;
+  type: TrustType;
+}
+
+export interface UserSearchResult {
+  id: number;
+  telegramId: number;
+  username: string | null;
+  firstName: string;
+  avatarUrl: string | null;
 }
 
 // ─── Search API ──────────────────────────────
@@ -85,6 +147,8 @@ export interface SearchRequest {
   amount: number;
   minSplitAmount: number;
   visibility: Visibility;
+  givePaymentMethods?: ParsedPaymentMethodGroup[];
+  takePaymentMethods?: ParsedPaymentMethodGroup[];
 }
 
 export interface MatchResult {
@@ -94,6 +158,7 @@ export interface MatchResult {
     fromCurrency: string;
     toCurrency: string;
     amount: number;
+    amountCurrency: string | null;
     paymentMethods: string[];
     originalMessageText: string | null;
     telegramMessageId: number;
@@ -107,7 +172,8 @@ export interface MatchResult {
   reputation: number;
   trustType: TrustType | null;
   groupName: string;
-  telegramMessageLink: string;
+  telegramMessageLink: string | null;
+  matchSource?: MatchSource;
 }
 
 export interface SearchResponse {

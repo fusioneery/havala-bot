@@ -13,8 +13,25 @@ function parseAmount(str: string): number {
   return Number(str.replace(/[^\d.]/g, '')) || 0;
 }
 
-function formatAmount(num: number): string {
-  return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+function formatAmount(num: number, maxDecimals = 6): string {
+  if (num === 0) return '0';
+  
+  // For large numbers (>= 100): no decimals, add thousand separators
+  if (num >= 100) {
+    return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  }
+  
+  // For numbers >= 1: up to 2 decimals
+  if (num >= 1) {
+    const rounded = Math.round(num * 100) / 100;
+    const str = rounded.toString();
+    return str.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  }
+  
+  // For numbers < 1: keep significant decimals (up to maxDecimals)
+  const rounded = Number(num.toPrecision(4));
+  const str = rounded.toFixed(maxDecimals).replace(/\.?0+$/, '');
+  return str || '0';
 }
 
 export function SplitSlider({ value, onChange, maxAmount, currency, toMaxAmount, toCurrency }: MinExchangeAmountProps) {
@@ -23,7 +40,7 @@ export function SplitSlider({ value, onChange, maxAmount, currency, toMaxAmount,
   const toMax = parseAmount(toMaxAmount);
   const currentValue = parseAmount(value);
   const rate = max > 0 ? toMax / max : 0;
-  const convertedAmount = Math.round(currentValue * rate);
+  const convertedAmount = currentValue * rate;
   
   const percent = max > 0 ? Math.round((currentValue / max) * 100) : 100;
   
@@ -75,7 +92,7 @@ export function SplitSlider({ value, onChange, maxAmount, currency, toMaxAmount,
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newPercent = Number(e.target.value);
-    const newAmount = Math.round((max * newPercent) / 100);
+    const newAmount = (max * newPercent) / 100;
     const formatted = formatAmount(newAmount);
     setInputValue(formatted);
     onChange(formatted);
@@ -120,6 +137,7 @@ export function SplitSlider({ value, onChange, maxAmount, currency, toMaxAmount,
           value={percent}
           onChange={handleSliderChange}
           className="range-slider relative z-10"
+          style={{ backgroundSize: `${percent}% 100%` }}
         />
 
         {/* Tick marks */}

@@ -18,7 +18,7 @@ export function EmptyState({ offerText, allSwiped, onReset }: EmptyStateProps) {
             <Bell className="w-7 h-7 text-muted-foreground" />
           </div>
           <h2 className="text-[20px] font-bold text-foreground mb-2">
-            Матчей больше нет
+            Мэтчей больше нет
           </h2>
           <p className="text-[15px] text-muted-foreground mb-8 max-w-[280px]">
             Вы просмотрели все доступные предложения
@@ -39,7 +39,7 @@ export function EmptyState({ offerText, allSwiped, onReset }: EmptyStateProps) {
             Подходящих предложений нет
           </h2>
           <p className="text-[15px] text-muted-foreground mb-8 max-w-[280px]">
-            Мы напишем вам в ЛС от бота, когда появится подходящий матч
+            Бот напишет вам в ЛС, когда появится подходящая заявка
           </p>
         </>
       )}
@@ -51,7 +51,7 @@ export function EmptyState({ offerText, allSwiped, onReset }: EmptyStateProps) {
         className="w-full bg-primary text-primary-foreground h-[56px] rounded-[24px] font-bold text-[17px] flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-lg"
       >
         <Send className="w-5 h-5" />
-        Запостить в группу
+        Написать ещё в группу
       </a>
     </div>
   );

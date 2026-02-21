@@ -1,0 +1,1 @@
+ALTER TABLE `trusted_groups` ADD `link` text;

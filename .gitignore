@@ -5,4 +5,7 @@ dist/
 *.db-*
 .env
 .DS_Store
+.dev.log
 bun.lock
+packages/llm-client/scripts/test-*
+.dmux/

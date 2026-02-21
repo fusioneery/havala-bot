@@ -1,13 +1,45 @@
 import { BottomSheet } from '@/components/ui/bottom-sheet';
+import { GroupTooltip } from '@/components/ui/group-tooltip';
+import { useTrustedGroups } from '@/hooks/use-trusted-groups';
 import { cn } from '@/lib/utils';
-import type { Visibility } from '@hawala/shared';
-import { ChevronRight, CircleHelp } from 'lucide-react';
+import type { ContactListItem, Visibility } from '@hawala/shared';
+import { ChevronRight, CircleHelp, Users } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+function useInviteFriend() {
+  const [inviting, setInviting] = useState(false);
+
+  const handleInviteFriend = useCallback(async () => {
+    if (inviting) return;
+    setInviting(true);
+    try {
+      const res = await fetch('/api/contacts/invite-link');
+      if (!res.ok) throw new Error('Failed to get invite link');
+      const { link } = await res.json();
+
+      const tg = (window as unknown as { Telegram?: { WebApp?: { openTelegramLink?: (url: string) => void } } }).Telegram?.WebApp;
+      const shareText = 'Добавь меня в Халве! Это бот для быстрого обмена деньгами среди тех, кому ты доверяешь.';
+      const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(shareText)}`;
+
+      if (tg?.openTelegramLink) {
+        tg.openTelegramLink(shareUrl);
+      } else {
+        window.open(shareUrl, '_blank');
+      }
+    } catch (err) {
+      console.error('Failed to get invite link:', err);
+    } finally {
+      setInviting(false);
+    }
+  }, [inviting]);
+
+  return { handleInviteFriend, inviting };
+}
 
 interface VisibilitySelectorProps {
   value: Visibility;
   onChange: (value: Visibility) => void;
-  groupName?: string;
 }
 
 const options: Array<{
@@ -24,24 +56,51 @@ const options: Array<{
   },
 ];
 
-export function VisibilitySelector({ value, onChange, groupName }: VisibilitySelectorProps) {
+export function VisibilitySelector({ value, onChange }: VisibilitySelectorProps) {
+  const navigate = useNavigate();
+  const { groups } = useTrustedGroups();
+  const { handleInviteFriend, inviting } = useInviteFriend();
   const [faqOpen, setFaqOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
-  const [groupTooltipOpen, setGroupTooltipOpen] = useState(false);
-  const groupTooltipRef = useRef<HTMLSpanElement>(null);
-
-  const closeGroupTooltip = useCallback(() => setGroupTooltipOpen(false), []);
+  const faqContentRef = useRef<HTMLDivElement>(null);
+  const [noFriendsWarningOpen, setNoFriendsWarningOpen] = useState(false);
+  const [friendsCount, setFriendsCount] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!groupTooltipOpen) return;
-    const handleOutside = (e: PointerEvent) => {
-      if (groupTooltipRef.current && !groupTooltipRef.current.contains(e.target as Node)) {
-        closeGroupTooltip();
-      }
-    };
-    document.addEventListener('pointerdown', handleOutside);
-    return () => document.removeEventListener('pointerdown', handleOutside);
-  }, [groupTooltipOpen, closeGroupTooltip]);
+    fetch('/api/contacts')
+      .then((res) => res.json())
+      .then((contacts: ContactListItem[]) => {
+        const friends = contacts.filter((c) => c.type === 'friend');
+        setFriendsCount(friends.length);
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleOptionSelect = useCallback((optionValue: Visibility) => {
+    if (optionValue === 'friends_only' && friendsCount === 0) {
+      setNoFriendsWarningOpen(true);
+      return;
+    }
+    onChange(optionValue);
+  }, [friendsCount, onChange]);
+
+  const handleGoToFriends = useCallback(() => {
+    setNoFriendsWarningOpen(false);
+    navigate('/friends');
+  }, [navigate]);
+
+  const handleSelectFriendsAndAcquaintances = useCallback(() => {
+    setNoFriendsWarningOpen(false);
+    onChange('friends_and_acquaintances');
+  }, [onChange]);
+
+  useEffect(() => {
+    if (faqOpen && faqContentRef.current) {
+      setTimeout(() => {
+        faqContentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }, 50);
+    }
+  }, [faqOpen]);
 
   return (
     <div className="px-1">
@@ -55,7 +114,7 @@ export function VisibilitySelector({ value, onChange, groupName }: VisibilitySel
                 type="radio"
                 name="visibility"
                 checked={isSelected}
-                onChange={() => onChange(option.value)}
+                onChange={() => handleOptionSelect(option.value)}
                 className="peer hidden"
               />
               <div
@@ -109,6 +168,7 @@ export function VisibilitySelector({ value, onChange, groupName }: VisibilitySel
           <span>В чём разница?</span>
         </button>
         <div
+          ref={faqContentRef}
           className={cn(
             'transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
             faqOpen ? 'max-h-70 opacity-100' : 'max-h-0 opacity-0 overflow-hidden',
@@ -117,34 +177,9 @@ export function VisibilitySelector({ value, onChange, groupName }: VisibilitySel
           <div className="pt-3 pb-1 pl-6 pr-2 flex flex-col gap-2">
             <p className="text-muted-foreground text-[14px] leading-relaxed">
               При выборе "Друзья и знакомые" поиск будет осуществляться среди всех сообщений в{' '}
-              <span ref={groupTooltipRef} className="relative inline">
-                <span
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => groupName && setGroupTooltipOpen((v) => !v)}
-                  onKeyDown={(e) => e.key === 'Enter' && groupName && setGroupTooltipOpen((v) => !v)}
-                  className={cn(
-                    'underline decoration-dotted underline-offset-[3px] decoration-muted-foreground/50',
-                    groupName && 'cursor-pointer',
-                  )}
-                >
-                  доверенной группе
-                </span>
-                {groupTooltipOpen && groupName && (
-                  <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-4 py-2.5 bg-foreground text-background rounded-xl whitespace-nowrap shadow-lg animate-in fade-in zoom-in-95 duration-150 flex items-center gap-2.5">
-                    <span className="text-[14px] font-medium">{groupName}</span>
-                    <a
-                      href={`https://t.me/${groupName.replace(/\s+/g, '')}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="bg-background text-foreground text-[12px] font-semibold px-3 py-1 rounded-full hover:opacity-80 transition shrink-0"
-                    >
-                      Открыть
-                    </a>
-                    <span className="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-foreground" />
-                  </span>
-                )}
-              </span>
+              <GroupTooltip groups={groups} className="decoration-muted-foreground/50">
+                доверенной группе
+              </GroupTooltip>
               , где состоит бот.
             </p>
             <p className="text-muted-foreground text-[14px] leading-relaxed">
@@ -167,14 +202,52 @@ export function VisibilitySelector({ value, onChange, groupName }: VisibilitySel
           Как добавлять друзей
         </h3>
         <div className="flex flex-col gap-2.5">
-          <p className="text-muted-foreground text-[14px] leading-relaxed">
-            Отправьте другу ссылку на бота. Когда он запустит бота и вы оба
-            будете в контактах друг друга в Telegram — вы автоматически
-            появитесь в списках друзей.
+          <p>
+            <button
+              onClick={handleInviteFriend}
+              disabled={inviting}
+              className="underline decoration-lime text-foreground font-medium underline-offset-2 hover:opacity-70 transition-opacity disabled:opacity-50"
+            >
+              Отправьте приглашение в Халву
+            </button>
           </p>
           <p className="text-muted-foreground text-[14px] leading-relaxed">
-            Также можно переслать контакт или любое сообщение друга прямо боту — этого достаточно, чтобы он появился в списке друзей.
+            Когда он перейдёт по пригласительной ссылке, вы автоматически
+            появитесь в списках друзей друг у друга.
           </p>
+          <p className="text-muted-foreground text-[14px] leading-relaxed">
+            Ещё можно переслать любое сообщение друга прямо в личку боту — этого достаточно, чтобы он появился в списке друзей.
+          </p>
+        </div>
+      </BottomSheet>
+
+      <BottomSheet open={noFriendsWarningOpen} onClose={() => setNoFriendsWarningOpen(false)}>
+        <div className="flex flex-col items-center text-center">
+          <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mb-4">
+            <Users className="w-7 h-7 text-muted-foreground" />
+          </div>
+          <h3 className="text-[18px] font-bold text-foreground mb-2">
+            Вы не добавили друзей
+          </h3>
+          <p className="text-[15px] text-muted-foreground mb-6 leading-relaxed">
+            При поиске только среди друзей вы никого не найдёте. Сначала добавьте друзей или выберите опцию "Друзья и знакомые", чтобы искать среди сообщений знакомых в доверенной группе.
+          </p>
+        </div>
+        <div className="flex flex-col gap-3">
+        <button
+            onClick={handleSelectFriendsAndAcquaintances}
+            className="w-full h-[52px] rounded-[20px] bg-lime text-[#1C1C1E] font-bold text-[16px] active:scale-[0.98] transition-all"
+          >
+            Искать среди знакомых тоже
+          </button>
+          <button
+            onClick={handleGoToFriends}
+            className="w-full h-[52px] rounded-[20px] bg-accent text-foreground font-semibold text-[16px] active:scale-[0.98] transition-all"
+            
+          >
+            Добавить друзей
+          </button>
+
         </div>
       </BottomSheet>
     </div>

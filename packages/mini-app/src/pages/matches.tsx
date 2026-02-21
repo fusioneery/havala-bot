@@ -1,18 +1,19 @@
-import { useEffect, useState, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
-import type { MatchResult } from '@hawala/shared';
-import { MatchCard } from '@/components/match/match-card';
 import { EmptyState } from '@/components/match/empty-state';
+import { MatchCard } from '@/components/match/match-card';
+import { useBackButton } from '@/hooks/use-back-button';
+import type { MatchResult } from '@hawala/shared';
+import { useCallback, useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 
 interface MatchPageState {
   matches: MatchResult[];
   offerText: string;
+  searchedAt?: string;
 }
 
 export default function MatchesPage() {
   const { offerId } = useParams<{ offerId: string }>();
-  const navigate = useNavigate();
+  useBackButton('/');
 
   const [data, setData] = useState<MatchPageState | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -53,24 +54,18 @@ export default function MatchesPage() {
 
   return (
     <div className="w-full h-dvh flex flex-col bg-background text-foreground">
-      {/* Header */}
-      <header className="flex items-center gap-4 px-5 pt-8 pb-4">
-        <button
-          onClick={() => navigate('/')}
-          className="w-10 h-10 rounded-full bg-card text-foreground flex items-center justify-center hover:bg-accent transition active:scale-95"
-        >
-          <ArrowLeft className="w-[18px] h-[18px]" strokeWidth={2.5} />
-        </button>
+      <header className="px-5 pt-5 pb-4">
         <h1 className="text-[17px] font-semibold tracking-tight">
-          {hasMatches ? `Матчи (${data.matches.length})` : 'Результаты'}
+          {hasMatches ? `Мэтчи (${data.matches.length})` : 'Результаты'}
         </h1>
       </header>
 
       {/* Content */}
       <main className="flex-1 overflow-y-auto no-scrollbar px-4 pb-8">
+        <div className="sticky top-0 h-6 bg-gradient-to-b from-background to-transparent z-10 pointer-events-none" />
         {currentMatch ? (
           <div className="relative">
-            <MatchCard match={currentMatch} />
+            <MatchCard match={currentMatch} searchedAt={data.searchedAt} />
 
             {/* Skip button */}
             <div className="mt-4 flex justify-center">

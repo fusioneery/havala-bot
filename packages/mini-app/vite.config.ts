@@ -15,7 +15,7 @@ export default defineConfig({
     allowedHosts: ['floral-zum-mae-charger.trycloudflare.com', 'localhost', '127.0.0.1'],
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        target: 'http://localhost:3003',
         changeOrigin: true,
       },
     },

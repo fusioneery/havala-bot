@@ -1,4 +1,6 @@
 export const CURRENCIES = [
+  // Crypto
+  'BTC', 'ETH', 'TON',
   // Stablecoins
   'USDT', 'USDC',
   // Euro variants
@@ -7,7 +9,7 @@ export const CURRENCIES = [
   'USD', 'RUB', 'GEL', 'AMD', 'HUF',
   // Other fiat (extend as needed)
   'GBP', 'CHF', 'TRY', 'KZT', 'UAH', 'BYN', 'AZN', 'UZS',
-  'THB', 'VND', 'IDR', 'MYR', 'SGD', 'HKD', 'JPY', 'KRW',
+  'KGS', 'TJS', 'THB', 'VND', 'IDR', 'MYR', 'SGD', 'HKD', 'JPY', 'KRW',
   'CNY', 'INR', 'AED', 'SAR', 'ILS', 'PLN', 'CZK', 'RON',
   'BGN', 'HRK', 'RSD', 'BAM', 'MDL', 'NOK', 'SEK', 'DKK',
   'CAD', 'AUD', 'NZD', 'BRL', 'ARS', 'MXN', 'CLP', 'COP',

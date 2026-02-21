@@ -1,7 +1,12 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { config } from './config';
+import { contactRoutes } from './routes/contacts';
+import { groupRoutes } from './routes/groups';
+import { feedRoutes } from './routes/feed';
 import { offerRoutes } from './routes/offers';
+import { rateRoutes } from './routes/rates';
+import { isBlacklisted } from './services/blacklist';
 
 export async function createServer() {
   const server = Fastify({ logger: true });
@@ -10,16 +15,24 @@ export async function createServer() {
     origin: config.isProd ? false : ['http://localhost:5173'],
   });
 
+  server.addHook('preHandler', async (request, reply) => {
+    if (request.url === '/api/health') return;
+
+    const telegramId = getTelegramIdFromRequest(request);
+    if (telegramId && isBlacklisted(telegramId)) {
+      reply.status(503).send({ error: 'Service temporarily unavailable' });
+    }
+  });
+
   // Health check
   server.get('/api/health', async () => ({ status: 'ok' }));
 
   // Register route plugins
+  server.register(feedRoutes, { prefix: '/api/feed' });
   server.register(offerRoutes, { prefix: '/api/offers' });
-  // server.register(authRoutes, { prefix: '/api/auth' });
-  // server.register(contactRoutes, { prefix: '/api/contacts' });
-  // server.register(matchRoutes, { prefix: '/api/matches' });
-  // server.register(groupRoutes, { prefix: '/api/groups' });
-  // server.register(dealRoutes, { prefix: '/api/deals' });
+  server.register(rateRoutes, { prefix: '/api/rates' });
+  server.register(contactRoutes, { prefix: '/api/contacts' });
+  server.register(groupRoutes, { prefix: '/api/groups' });
 
   // In production, serve mini-app static build
   if (config.isProd) {
@@ -41,4 +54,20 @@ export async function createServer() {
   }
 
   return server;
+}
+
+function getTelegramIdFromRequest(request: { headers: Record<string, string | string[] | undefined> }): number | null {
+  const initData = request.headers['x-telegram-init-data'];
+  if (!initData || typeof initData !== 'string') return null;
+
+  try {
+    const params = new URLSearchParams(initData);
+    const userJson = params.get('user');
+    if (!userJson) return null;
+
+    const user = JSON.parse(userJson);
+    return typeof user.id === 'number' ? user.id : null;
+  } catch {
+    return null;
+  }
 }

@@ -57,6 +57,7 @@
     --color-pill-active-text: var(--color-pill-active-text);
     --color-cta-bg: var(--color-cta-bg);
     --color-cta-text: var(--color-cta-text);
+    --color-accent2: var(--accent2);
 }
 
 :root {
@@ -68,8 +69,8 @@
     --card-foreground: #1C1C1E;
     --popover: #FFFFFF;
     --popover-foreground: #1C1C1E;
-    --primary: #1C1C1E;
-    --primary-foreground: #FFFFFF;
+    --primary: #C8F135;
+    --primary-foreground: #1C1C1E;
     --secondary: #F0F0F0;
     --secondary-foreground: #1C1C1E;
     --muted: #F5F5F5;
@@ -101,10 +102,11 @@
     --color-label: #8E8E93;
     --color-label-dim: #AEAEB2;
     --color-pill-bg: #FFFFFF;
-    --color-pill-active: #1C1C1E;
-    --color-pill-active-text: #FFFFFF;
-    --color-cta-bg: #1C1C1E;
-    --color-cta-text: #FFFFFF;
+    --color-pill-active: #C8F135;
+    --color-pill-active-text: #1C1C1E;
+    --color-cta-bg: #C8F135;
+    --color-cta-text: #1C1C1E;
+    --accent2: #F77283;
 }
 
 .dark {
@@ -152,6 +154,7 @@
     --color-pill-active-text: #FFFFFF;
     --color-cta-bg: #C8F135;
     --color-cta-text: #1C1C1E;
+    --accent2: #C8F135;
 }
 
 @layer base {
@@ -176,6 +179,7 @@
     border-radius: 999px;
     outline: none;
     background-image: linear-gradient(#C8F135, #C8F135);
+    background-size: 0% 100%;
     background-repeat: no-repeat;
     cursor: pointer;
 }
@@ -206,6 +210,11 @@
     box-shadow: 0 0 0 1px #C8F135;
 }
 
+/* ── Progressive blur (containment for backdrop-filter perf) ── */
+.gradient-blur {
+  contain: layout paint;
+}
+
 /* ── Scrollbar hide ── */
 .no-scrollbar::-webkit-scrollbar {
     display: none;
@@ -213,4 +222,63 @@
 .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+}
+
+/* ── Liquid glass nav ── */
+.glass-nav {
+    background: rgba(243, 243, 243, 0.72);
+    backdrop-filter: blur(8px) contrast(2);
+    -webkit-backdrop-filter: blur(8px) contrast(2);
+    border: 0.5px solid rgba(255, 255, 255, 0.6);
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.08),
+        0 1px 2px rgba(0, 0, 0, 0.04),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+.dark .glass-nav {
+    background: rgba(40, 40, 42, 0.72);
+    border-color: rgba(255, 255, 255, 0.06);
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.3),
+        0 1px 2px rgba(0, 0, 0, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+/* Active tab glass bubble */
+.glass-bubble {
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 16px;
+    border: 0.5px solid rgba(255, 255, 255, 0.8);
+    box-shadow:
+        0 2px 12px rgba(0, 0, 0, 0.06),
+        0 0.5px 1px rgba(0, 0, 0, 0.04),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+.dark .glass-bubble {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow:
+        0 2px 12px rgba(0, 0, 0, 0.15),
+        0 0.5px 1px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* ── Liquid glass CTA button ── */
+.glass-btn-cta {
+    background: rgba(247, 114, 131, 0.85); /* Accent2 pink */
+    backdrop-filter: blur(12px) contrast(2);
+    -webkit-backdrop-filter: blur(12px) contrast(2);
+    border: 0.5px solid rgba(255, 255, 255, 0.5);
+    box-shadow:
+        0 8px 24px rgba(247, 114, 131, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    color: #FFFFFF;
+}
+.dark .glass-btn-cta {
+    background: rgba(200, 241, 53, 0.75); /* Lime */
+    border: 0.5px solid rgba(255, 255, 255, 0.3);
+    box-shadow:
+        0 8px 32px rgba(200, 241, 53, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    color: #1C1C1E;
 }
