@@ -1,6 +1,7 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { config } from './config';
+import { offerRoutes } from './routes/offers';
 
 export async function createServer() {
   const server = Fastify({ logger: true });
@@ -12,10 +13,10 @@ export async function createServer() {
   // Health check
   server.get('/api/health', async () => ({ status: 'ok' }));
 
-  // TODO: register route plugins
+  // Register route plugins
+  server.register(offerRoutes, { prefix: '/api/offers' });
   // server.register(authRoutes, { prefix: '/api/auth' });
   // server.register(contactRoutes, { prefix: '/api/contacts' });
-  // server.register(offerRoutes, { prefix: '/api/offers' });
   // server.register(matchRoutes, { prefix: '/api/matches' });
   // server.register(groupRoutes, { prefix: '/api/groups' });
   // server.register(dealRoutes, { prefix: '/api/deals' });

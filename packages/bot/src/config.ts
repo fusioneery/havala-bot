@@ -18,4 +18,5 @@ export const config = {
   port: Number(process.env.PORT) || 3000,
   isProd: process.env.NODE_ENV === 'production',
   miniAppUrl: process.env.MINI_APP_URL!,
+  writeOfferText: process.env.WRITE_OFFER_TEXT || '#ищу {TAKE_AMOUNT} {TAKE_CURRENCY} через {TAKE_PAYMENT_METHOD}\n#предлагаю {GIVE_AMOUNT} {GIVE_CURRENCY} {GIVE_PAYMENT_METHOD}',
 } as const;
