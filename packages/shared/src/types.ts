@@ -77,3 +77,44 @@ export interface ParsedOffer {
   toCurrency: Currency | null;
   paymentMethods: PaymentMethodGroup[];
 }
+
+// ─── Search API ──────────────────────────────
+export interface SearchRequest {
+  fromCurrency: string;
+  toCurrency: string;
+  amount: number;
+  minSplitAmount: number;
+  visibility: Visibility;
+}
+
+export interface MatchResult {
+  id: number;
+  offer: {
+    id: number;
+    fromCurrency: string;
+    toCurrency: string;
+    amount: number;
+    paymentMethods: string[];
+    originalMessageText: string | null;
+    telegramMessageId: number;
+  };
+  author: {
+    telegramId: number;
+    username: string | null;
+    firstName: string;
+    avatarUrl: string | null;
+  };
+  reputation: number;
+  trustType: TrustType | null;
+  groupName: string;
+  telegramMessageLink: string;
+}
+
+export interface SearchResponse {
+  userOffer: {
+    id: number;
+    status: UserOfferStatus;
+  };
+  matches: MatchResult[];
+  offerText: string;
+}
