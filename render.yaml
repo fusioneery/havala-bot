@@ -1,0 +1,63 @@
+# =============================================================================
+# Render Blueprint
+# =============================================================================
+# Deploy: Connect GitHub repo → Render auto-detects this file
+# Docs: https://render.com/docs/blueprint-spec
+# =============================================================================
+
+services:
+  - type: web
+    name: hawala-bot
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    
+    # Region (oregon, ohio, frankfurt, singapore)
+    region: frankfurt
+    
+    # Instance type (free, starter, standard, pro)
+    plan: starter
+    
+    # Persistent disk for SQLite (Starter plan or higher required)
+    disk:
+      name: hawala-data
+      mountPath: /app/data
+      sizeGB: 1
+    
+    # Health check
+    healthCheckPath: /api/health
+    
+    # Environment variables
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "10000"  # Render uses port 10000 by default
+      - key: DB_FILE_NAME
+        value: /app/data/hawala.db
+      
+      # Secrets - set these in Render Dashboard
+      - key: BOT_TOKEN
+        sync: false  # Manual input required
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: TRUSTED_GROUP_IDS
+        sync: false
+      - key: MINI_APP_URL
+        sync: false
+      - key: ADMIN_IDS
+        sync: false
+      
+      # Optional with defaults
+      - key: OPENROUTER_MODEL
+        value: openai/gpt-4o-mini
+      - key: MESSAGE_BATCH_SIZE
+        value: "5"
+      - key: MESSAGE_BATCH_FLUSH_MS
+        value: "15000"
+      - key: RATE_LIMIT_DAILY_OFFERS
+        value: "5"
+      - key: RATE_LIMIT_MONTHLY_OFFERS
+        value: "10"
+      - key: OFFER_MAX_AGE_DAYS
+        value: "30"

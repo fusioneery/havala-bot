@@ -1,0 +1,29 @@
+# =============================================================================
+# Docker Compose Production Override
+# =============================================================================
+# Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# =============================================================================
+
+services:
+  hawala-bot:
+    # Use pre-built image instead of building
+    # image: ghcr.io/fusioneery/hawala-bot:latest
+    
+    restart: always
+    
+    # Production resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+    
+    # Production logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"

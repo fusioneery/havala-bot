@@ -1,0 +1,46 @@
+# =============================================================================
+# Fly.io Configuration
+# =============================================================================
+# Deploy: fly launch (first time) or fly deploy (updates)
+# Docs: https://fly.io/docs/reference/configuration/
+# =============================================================================
+
+app = "hawala-bot"
+primary_region = "ams"  # Amsterdam, change to your preferred region
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+  PORT = "8080"
+  DB_FILE_NAME = "/app/data/hawala.db"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = false  # Keep running for Telegram long-polling
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [http_service.concurrency]
+    type = "requests"
+    hard_limit = 250
+    soft_limit = 200
+
+[[http_service.checks]]
+  grace_period = "30s"
+  interval = "30s"
+  method = "GET"
+  timeout = "10s"
+  path = "/api/health"
+
+[mounts]
+  source = "hawala_data"
+  destination = "/app/data"
+  initial_size = "1gb"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
+  cpus = 1

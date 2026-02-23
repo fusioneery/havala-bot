@@ -294,7 +294,7 @@ bot.command('start', async (ctx) => {
   const adminListText = adminUsernames.length > 0 ? adminUsernames.join(', ') : 'не удалось определить';
 
   const welcomeText = [
-    'Привет! Я Hawala Bot.',
+    'Привет! Я Халва бот.',
     '',
     'Как это работает:',
     '1. Вы создаёте заявку на обмен в мини-приложении.',
@@ -312,7 +312,7 @@ bot.command('start', async (ctx) => {
   await ctx.reply(welcomeText, {
     reply_markup: {
       inline_keyboard: [
-        [{ text: 'Запустить Web App', web_app: { url: config.miniAppUrl } }],
+        [{ text: 'Открыть Халву', web_app: { url: config.miniAppUrl } }],
       ],
     },
   });
@@ -352,14 +352,78 @@ const trustTypeLabel: Record<'friend' | 'acquaintance', string> = {
 bot.callbackQuery(/^trust:/, async (ctx) => {
   const type = ctx.callbackQuery.data.replace('trust:', '') as 'friend' | 'acquaintance';
   const label = trustTypeLabel[type] ?? type;
+  const currentUser = ctx.from;
   const repliedMsg = ctx.callbackQuery.message?.reply_to_message;
-  const forwardOrigin = repliedMsg?.forward_origin as { sender_user?: { first_name: string; last_name?: string; username?: string }; sender_user_name?: string } | undefined;
+  const forwardOrigin = repliedMsg?.forward_origin as {
+    sender_user?: { id: number; first_name: string; last_name?: string; username?: string };
+    sender_user_name?: string;
+  } | undefined;
+
   const userDisplay = forwardOrigin ? getForwardedUserDisplay(forwardOrigin) : '';
   const suffix = userDisplay ? ` (${userDisplay})` : '';
 
-  // TODO: save trust relation to DB
-  await ctx.answerCallbackQuery({ text: `Добавлен как ${label}!${suffix}` });
-  await ctx.editMessageText(`Добавлен как ${label}${suffix}`);
+  if (!forwardOrigin?.sender_user?.id) {
+    await ctx.answerCallbackQuery({ text: 'Не удалось определить пользователя из пересланного сообщения' });
+    return;
+  }
+
+  const forwardedTelegramId = forwardOrigin.sender_user.id;
+
+  if (forwardedTelegramId === currentUser.id) {
+    await ctx.answerCallbackQuery({ text: 'Нельзя добавить себя в контакты' });
+    return;
+  }
+
+  try {
+    const [dbCurrentUser] = await db
+      .select({ id: schema.users.id })
+      .from(schema.users)
+      .where(eq(schema.users.telegramId, currentUser.id))
+      .limit(1);
+
+    if (!dbCurrentUser) {
+      await ctx.answerCallbackQuery({ text: 'Сначала запустите бота командой /start' });
+      return;
+    }
+
+    const forwardedUser = forwardOrigin.sender_user;
+    const forwardedFirstName = forwardedUser.first_name || 'Unknown';
+
+    const [existingTarget] = await db
+      .select({ id: schema.users.id })
+      .from(schema.users)
+      .where(eq(schema.users.telegramId, forwardedTelegramId))
+      .limit(1);
+
+    let targetUserId: number;
+    if (existingTarget) {
+      targetUserId = existingTarget.id;
+    } else {
+      const [newUser] = await db
+        .insert(schema.users)
+        .values({
+          telegramId: forwardedTelegramId,
+          firstName: forwardedFirstName,
+          username: forwardedUser.username ?? null,
+        })
+        .returning({ id: schema.users.id });
+      targetUserId = newUser.id;
+    }
+
+    await db
+      .insert(schema.trustRelations)
+      .values({ userId: dbCurrentUser.id, targetUserId, type })
+      .onConflictDoUpdate({
+        target: [schema.trustRelations.userId, schema.trustRelations.targetUserId],
+        set: { type },
+      });
+
+    await ctx.answerCallbackQuery({ text: `Добавлен как ${label}!` });
+    await ctx.editMessageText(`✅ Добавлен как ${label}${suffix}`);
+  } catch (error) {
+    console.error('[trust] Error saving trust relation:', error);
+    await ctx.answerCallbackQuery({ text: 'Произошла ошибка при сохранении' });
+  }
 });
 
 bot.callbackQuery(/^match_success:/, async (ctx) => {

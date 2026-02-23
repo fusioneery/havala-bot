@@ -6,8 +6,16 @@
     "dev": "concurrently -n bot,app -c blue,green \"bun run --filter @hawala/bot dev\" \"bun run --filter @hawala/mini-app dev\" 2>&1 | tee .dev.log",
     "dev:bot": "bun run --filter @hawala/bot dev",
     "build": "bun run --filter @hawala/mini-app build",
+    "start": "bun packages/bot/src/index.ts",
+    "start:prod": "NODE_ENV=production bun packages/bot/src/index.ts",
     "db:generate": "bun run --filter @hawala/bot db:generate",
-    "db:push": "bun run --filter @hawala/bot db:push"
+    "db:push": "bun run --filter @hawala/bot db:push",
+    "docker:build": "docker build -t hawala-bot .",
+    "docker:run": "docker run -d --name hawala-bot -p 3000:3000 --env-file .env -v hawala-data:/app/data hawala-bot",
+    "docker:up": "docker compose up -d --build",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "typecheck": "bun run --filter '*' typecheck"
   },
   "devDependencies": {
     "concurrently": "^9.1.0",

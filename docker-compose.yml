@@ -1,13 +1,59 @@
+# =============================================================================
+# Docker Compose - Local development and production deployment
+# =============================================================================
+# Usage:
+#   Development:  docker compose up --build
+#   Production:   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#   Logs:         docker compose logs -f hawala-bot
+#   Stop:         docker compose down
+# =============================================================================
+
 services:
   hawala-bot:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hawala-bot
+    restart: unless-stopped
+    
     ports:
-      - "3000:3000"
+      - "${PORT:-3000}:${PORT:-3000}"
+    
     volumes:
+      # Persistent SQLite database
       - hawala-data:/app/data
+    
+    environment:
+      - NODE_ENV=production
+      - PORT=${PORT:-3000}
+      - DB_FILE_NAME=/app/data/hawala.db
+    
     env_file:
       - .env
-    restart: unless-stopped
+    
+    # Health check (also defined in Dockerfile)
+    healthcheck:
+      test: ["CMD", "bun", "-e", "fetch('http://localhost:' + (process.env.PORT || 3000) + '/api/health').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    # Resource limits (adjust based on your server)
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
 
 volumes:
   hawala-data:
+    driver: local

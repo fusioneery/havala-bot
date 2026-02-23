@@ -1,10 +1,10 @@
-import { config } from './config';
 import { bot } from './bot';
+import { config } from './config';
 import { createServer } from './server';
 import { initAdminAlerts } from './services/admin-alerts';
-import { startRateService } from './services/rates';
 import { initBlacklistCache } from './services/blacklist';
 import { startCleanupJob } from './services/cleanup';
+import { startRateService } from './services/rates';
 
 async function logTrustedGroups(): Promise<void> {
   const ids = config.trustedGroupIds;
@@ -25,7 +25,7 @@ async function logTrustedGroups(): Promise<void> {
 }
 
 async function main() {
-  console.log('Starting Hawala Bot...');
+  console.log('Starting Halwa Bot...');
 
   await logTrustedGroups();
 
