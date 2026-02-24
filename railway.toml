@@ -29,7 +29,7 @@ numReplicas = 1
 
 # Health check configuration
 healthcheckPath = "/api/health"
-healthcheckTimeout = 30
+healthcheckTimeout = 120
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
 
