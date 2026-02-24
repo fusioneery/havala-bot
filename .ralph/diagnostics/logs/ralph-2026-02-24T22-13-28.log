@@ -1,0 +1,10 @@
+2026-02-24T21:13:28.689696Z  INFO ralph_core::event_loop: Memory injection check: enabled=true, inject=Auto, workspace_root="/Users/vlad/projects/hawala-bot"
+2026-02-24T21:13:28.689761Z  INFO ralph_core::event_loop: Looking for memories at: "/Users/vlad/projects/hawala-bot/.ralph/agent/memories.md" (exists: true)
+2026-02-24T21:13:28.694289Z  INFO ralph_core::event_loop: Successfully loaded 1 memories from store
+2026-02-24T21:13:28.694299Z  INFO ralph_core::event_loop: Injecting 1 memories (378 chars) into prompt
+2026-02-24T21:13:28.694985Z  INFO ralph_core::event_loop: Injecting ready tasks (0 ready, 0 open, 4 closed) into prompt
+2026-02-24T21:17:24.169707Z  INFO ralph_core::event_loop: Completion event detected in JSONL topic=LOOP_COMPLETE
+2026-02-24T21:17:24.170498Z  INFO ralph_core::event_loop: Completion event detected - terminating
+2026-02-24T21:17:24.170508Z  INFO ralph::loop_runner: Completion event LOOP_COMPLETE detected.
+2026-02-24T21:17:24.170514Z  INFO ralph_core::event_loop: Wrapping up: completed. 1 iterations in 3m 55s. reason=completed iterations=1 duration=3m 55s
+2026-02-24T21:17:24.187238Z  INFO ralph_core::landing: Beginning landing sequence loop_id=primary

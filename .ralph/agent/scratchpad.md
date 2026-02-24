@@ -1,51 +1,17 @@
+# Scratchpad
 
-### HUMAN GUIDANCE (2026-02-24 19:48:10 UTC)
+## Objective
+Fix: "Халва работает только внутри бота" — mini-app shows error screen when opened as Telegram Mini App.
 
-maybe its easier and faster to test those changes locally? i do have docker too
+## Analysis
+The mini-app checks `window.Telegram?.WebApp?.initData` to determine if the user is authenticated (opened inside Telegram). If `initData` is falsy, it shows the "NotInBotScreen" error.
 
-### HUMAN GUIDANCE (2026-02-24 19:48:10 UTC)
+**Root cause**: The `index.html` was missing the Telegram WebApp SDK script tag:
+```html
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+```
 
-i ve aborted the last deployment
+Without this script, `window.Telegram` is `undefined` even inside Telegram, so the auth check always fails → user sees the error screen.
 
-### HUMAN GUIDANCE (2026-02-24 19:48:10 UTC)
-
-братан а ты не хочешь локально все же сначала позапускать всё это добро прежде чем на railway пробовать??
-
-### LOCAL DOCKER TEST (2026-02-24 19:56 UTC)
-
-**Docker build: ✅ SUCCESS** — image builds fine locally (both stages)
-**App startup: ✅ SUCCESS** — all services init (migrations, rates, cleanup, blacklist)
-**Health check: ✅ `/api/health` → 200 `{"status":"ok"}`**
-**Bot long polling: ✅ Running** (with real token)
-
-### RAILWAY DIAGNOSIS (2026-02-24 19:57 UTC)
-
-**`@hawala/bot` (CRASHED):**
-- Build: ✅ SUCCESS
-- Health check: ✅ PASSED
-- Runtime: ❌ CRASHED — `GrammyError 409: Conflict: terminated by other getUpdates request`
-- Root cause: local dev bot was running simultaneously → dual long polling → crash
-- This is NOT a Dockerfile/deployment issue. Just need to stop local bot first.
-
-**`@hawala/mini-app` (FAILED):**
-- Health check: ❌ FAILED (6 attempts, never healthy)
-- Root cause: This service is UNNECESSARY. The bot already serves mini-app via @fastify/static in production.
-- Action: delete this service.
-
-**`MINI_APP_URL` misconfigured:**
-- Currently: `https://floral-zum-mae-charger.trycloudflare.com` (Cloudflare tunnel)
-- Should be: `https://hawalabot-production.up.railway.app` (bot serves mini-app itself)
-
-### PLAN
-1. Delete `@hawala/mini-app` service on Railway (unnecessary)
-2. Fix `MINI_APP_URL` env var on Railway to use Railway domain
-3. Redeploy `@hawala/bot` (ensure local bot is stopped first)
-
-### RESOLUTION (2026-02-24 20:03 UTC)
-
-All issues resolved:
-- ✅ `MINI_APP_URL` updated to `https://hawalabot-production.up.railway.app`
-- ✅ `@hawala/bot` redeployed — **SUCCESS**, health check passing, bot running
-- ✅ Public endpoint verified: `curl https://hawalabot-production.up.railway.app/api/health` → `{"status":"ok"}`
-- ⚠️ `@hawala/mini-app` service still exists (FAILED) — Railway CLI can't delete services, user should delete from dashboard
-- ⚠️ No code changes were needed — all issues were config/operational
+## Fix Applied
+Added the SDK script tag to `packages/mini-app/index.html` in the `<head>`, before the font import. Verified build succeeds and the script tag appears in the production dist.

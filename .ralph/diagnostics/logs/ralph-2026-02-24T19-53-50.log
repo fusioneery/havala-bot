@@ -21,3 +21,7 @@
 2026-02-24T20:03:41.651888Z  INFO ralph::loop_runner: Completion event LOOP_COMPLETE detected.
 2026-02-24T20:03:41.652120Z  INFO ralph_core::event_loop: Wrapping up: completed. 3 iterations in 1h 9m 50s. reason=completed iterations=3 duration=1h 9m 50s
 2026-02-24T20:03:41.692811Z  INFO ralph_core::landing: Beginning landing sequence loop_id=primary
+2026-02-24T20:03:41.944582Z  INFO ralph_core::landing: Auto-committed changes during landing loop_id=primary commit=Some("ed73d26c819b73c3b89db9dfb4121ccce065eca2") files=10
+2026-02-24T20:03:44.016344Z  INFO ralph_core::landing: Generated handoff file loop_id=primary path=/Users/vlad/projects/hawala-bot/.ralph/agent/handoff.md completed=4 open=0
+2026-02-24T20:03:44.064044Z  INFO ralph_core::loop_completion: Landing completed with auto-commit commit=Some("ed73d26c819b73c3b89db9dfb4121ccce065eca2") handoff=/Users/vlad/projects/hawala-bot/.ralph/agent/handoff.md
+2026-02-24T20:03:44.064134Z  INFO ralph::loop_runner: Primary loop landed successfully committed=true handoff=/Users/vlad/projects/hawala-bot/.ralph/agent/handoff.md open_tasks=0
