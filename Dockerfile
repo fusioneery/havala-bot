@@ -60,9 +60,7 @@ ENV DB_FILE_NAME=/app/data/hawala.db
 # Expose port (configurable via PORT env var, but 3000 is default)
 EXPOSE 3000
 
-# Health check - verify API is responding
-HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 \
-    CMD bun -e "fetch('http://localhost:' + (process.env.PORT || 3000) + '/api/health').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"
+# No HEALTHCHECK in Dockerfile — Railway handles it via config
 
 # Start the application
 CMD ["bun", "packages/bot/src/index.ts"]

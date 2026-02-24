@@ -45,8 +45,9 @@ coverage
 .DS_Store
 Thumbs.db
 
-# Drizzle migrations (schema is pushed directly)
-packages/bot/drizzle
+# Drizzle migration snapshots (not needed at runtime, but _journal.json IS needed)
+packages/bot/drizzle/meta/*.json
+!packages/bot/drizzle/meta/_journal.json
 
 # SQLite database files (should be mounted as volume)
 *.db
