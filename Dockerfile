@@ -30,11 +30,8 @@ RUN bun install --frozen-lockfile --ignore-scripts
 FROM base AS builder
 
 # Copy dependencies from deps stage
+# Bun hoists all deps to root node_modules in workspaces
 COPY --from=deps /app/node_modules node_modules
-COPY --from=deps /app/packages/shared/node_modules packages/shared/node_modules
-COPY --from=deps /app/packages/llm-client/node_modules packages/llm-client/node_modules
-COPY --from=deps /app/packages/bot/node_modules packages/bot/node_modules
-COPY --from=deps /app/packages/mini-app/node_modules packages/mini-app/node_modules
 
 # Copy source code
 COPY . .
