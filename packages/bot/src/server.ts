@@ -7,6 +7,7 @@ import { feedRoutes } from './routes/feed';
 import { offerRoutes } from './routes/offers';
 import { rateRoutes } from './routes/rates';
 import { isBlacklisted } from './services/blacklist';
+import { authenticateRequest } from './lib/auth';
 
 export async function createServer() {
   const server = Fastify({
@@ -55,9 +56,12 @@ export async function createServer() {
   server.addHook('preHandler', async (request, reply) => {
     if (request.url === '/api/health') return;
 
-    const telegramId = getTelegramIdFromRequest(request);
-    if (telegramId && isBlacklisted(telegramId)) {
-      reply.status(503).send({ error: 'Service temporarily unavailable' });
+    const authResult = await authenticateRequest(request);
+    if (authResult.ok) {
+      if (isBlacklisted(authResult.data.telegramId)) {
+        return reply.status(503).send({ error: 'Service temporarily unavailable' });
+      }
+      (request as any).auth = authResult.data;
     }
   });
 
@@ -95,18 +99,3 @@ export async function createServer() {
   return server;
 }
 
-function getTelegramIdFromRequest(request: { headers: Record<string, string | string[] | undefined> }): number | null {
-  const initData = request.headers['x-telegram-init-data'];
-  if (!initData || typeof initData !== 'string') return null;
-
-  try {
-    const params = new URLSearchParams(initData);
-    const userJson = params.get('user');
-    if (!userJson) return null;
-
-    const user = JSON.parse(userJson);
-    return typeof user.id === 'number' ? user.id : null;
-  } catch {
-    return null;
-  }
-}
