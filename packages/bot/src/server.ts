@@ -1,4 +1,4 @@
-import Fastify from 'fastify';
+import Fastify, { type FastifyError } from 'fastify';
 import cors from '@fastify/cors';
 import { config } from './config';
 import { contactRoutes } from './routes/contacts';
@@ -9,13 +9,47 @@ import { rateRoutes } from './routes/rates';
 import { isBlacklisted } from './services/blacklist';
 
 export async function createServer() {
-  const server = Fastify({ logger: true });
+  const server = Fastify({
+    logger: {
+      level: 'info',
+      serializers: {
+        req(request) {
+          return {
+            method: request.method,
+            url: request.url,
+            headers: request.headers,
+          };
+        },
+      },
+    },
+  });
 
   await server.register(cors, {
     origin: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'x-telegram-init-data'],
     credentials: true,
+  });
+
+  // Global error handler — log full details for every unhandled error
+  server.setErrorHandler((error: FastifyError, request, reply) => {
+    request.log.error(
+      { err: error, req: { method: request.method, url: request.url, body: request.body } },
+      `Unhandled error on ${request.method} ${request.url}`,
+    );
+    const statusCode = error.statusCode ?? 500;
+    reply.status(statusCode).send({
+      error: error.name || 'InternalServerError',
+      message: error.message,
+      statusCode,
+    });
+  });
+
+  // Log POST/PUT/DELETE request bodies for debugging
+  server.addHook('preHandler', async (request) => {
+    if (request.method !== 'GET' && request.method !== 'OPTIONS' && request.url !== '/api/health') {
+      request.log.info({ body: request.body }, `${request.method} ${request.url} body`);
+    }
   });
 
   server.addHook('preHandler', async (request, reply) => {
@@ -46,12 +80,14 @@ export async function createServer() {
       wildcard: true,
     });
 
-    // SPA fallback — serve index.html for non-API routes
+    // SPA fallback — serve index.html only for GET on non-API routes
     server.setNotFoundHandler((request, reply) => {
       if (request.url.startsWith('/api/')) {
         reply.status(404).send({ error: 'Not found' });
-      } else {
+      } else if (request.method === 'GET' || request.method === 'HEAD') {
         reply.sendFile('index.html');
+      } else {
+        reply.status(404).send({ error: 'Not found' });
       }
     });
   }

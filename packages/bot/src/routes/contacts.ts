@@ -37,6 +37,10 @@ export async function contactRoutes(server: FastifyInstance) {
 
   // POST / — add or update contact
   server.post<{ Body: AddContactRequest }>('/', async (request, reply) => {
+    if (!request.body) {
+      return reply.status(400).send({ error: 'Missing request body' });
+    }
+
     const { targetUserId, type } = request.body;
 
     const [row] = await db

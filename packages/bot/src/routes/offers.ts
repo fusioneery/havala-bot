@@ -142,6 +142,10 @@ export async function offerRoutes(server: FastifyInstance) {
   });
 
   server.post<{ Body: SearchRequest }>('/search', async (request, reply) => {
+    if (!request.body) {
+      return reply.status(400).send({ error: 'Missing request body' });
+    }
+
     const {
       fromCurrency, toCurrency, amount, minSplitAmount, visibility,
       givePaymentMethods, takePaymentMethods,
