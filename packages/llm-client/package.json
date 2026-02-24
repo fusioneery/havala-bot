@@ -10,6 +10,6 @@
     "eval": "bun scripts/eval.ts"
   },
   "dependencies": {
-    "@hawala/shared": "workspace:*"
+    "@hawala/shared": "*"
   }
 }
