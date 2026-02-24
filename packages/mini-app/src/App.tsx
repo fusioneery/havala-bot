@@ -15,7 +15,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { BrowserRouter, Outlet, Route, Routes, useNavigate } from 'react-router-dom';
 
 const IS_DEV = import.meta.env.DEV;
-const BOT_USERNAME = import.meta.env.VITE_BOT_USERNAME || 'HalwaBot';
+const BOT_USERNAME = import.meta.env.VITE_BOT_USERNAME || 'halwa_app_bot';
 
 function NotInBotScreen() {
   const botUrl = `https://t.me/${BOT_USERNAME.replace('@', '')}`;
