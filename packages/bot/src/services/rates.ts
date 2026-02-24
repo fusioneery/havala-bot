@@ -14,7 +14,7 @@ const COINGECKO_URL = 'https://api.coingecko.com/api/v3/simple/price';
 const OER_URL = 'https://openexchangerates.org/api/latest.json';
 const VAS3K_RATES_URL = 'https://kurs.vas3k.club/current-rates.json';
 
-const CRYPTO_REFRESH_MS = 60_000; // 1 minute
+const CRYPTO_REFRESH_MS = 5 * 60_000; // 5 minutes
 const FIAT_REFRESH_MS = 60 * 60_000; // 1 hour
 const VAS3K_REFRESH_MS = 5 * 60_000; // 5 minutes
 
