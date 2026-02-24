@@ -5,41 +5,21 @@
 # Works with: Docker, Docker Compose, Railway, Coolify
 # =============================================================================
 
-FROM oven/bun:1 AS base
+# =============================================================================
+# Builder stage - install dependencies and build
+# =============================================================================
+FROM oven/bun:1 AS builder
 WORKDIR /app
 
-# =============================================================================
-# Dependencies stage - install all dependencies
-# =============================================================================
-FROM base AS deps
-
-# Copy package files for dependency installation
-COPY package.json bun.lock ./
-COPY packages/shared/package.json packages/shared/
-COPY packages/llm-client/package.json packages/llm-client/
-COPY packages/bot/package.json packages/bot/
-COPY packages/mini-app/package.json packages/mini-app/
-
-# Install dependencies (frozen lockfile for reproducible builds)
-# --ignore-scripts: skip better-sqlite3 native build (devDep for drizzle-kit only; runtime uses bun:sqlite)
-RUN bun install --frozen-lockfile --ignore-scripts
-
-# =============================================================================
-# Builder stage - build the application
-# =============================================================================
-FROM base AS builder
-
-# Copy dependencies from deps stage
-# Bun hoists all deps to root node_modules in workspaces
-COPY --from=deps /app/node_modules node_modules
-
-# Copy source code
+# Copy everything (filtered by .dockerignore)
 COPY . .
 
-# Build mini-app for production (vite only — tsc check runs in CI, not Docker)
-RUN cd packages/mini-app && bun /app/node_modules/vite/bin/vite.js build
+# Install dependencies and build mini-app
+# --ignore-scripts: skip better-sqlite3 native build (devDep for drizzle-kit only; runtime uses bun:sqlite)
+RUN bun install --frozen-lockfile --ignore-scripts \
+    && cd packages/mini-app && bun run --bun vite build
 
-# Remove dev dependencies and unnecessary files
+# Remove dev dependencies, source files, and unnecessary files
 RUN rm -rf packages/mini-app/src packages/mini-app/public packages/mini-app/*.config.* \
     && rm -rf .git .github .vscode .cursor .dmux-hooks \
     && rm -rf *.md docs
