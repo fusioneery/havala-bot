@@ -21,8 +21,8 @@ watchPatterns = [
 ]
 
 [deploy]
-# Start command (uses CMD from Dockerfile if not specified)
-# startCommand = "bun packages/bot/src/index.ts"
+# Override service-level npm startCommand — bun:1-slim doesn't include npm
+startCommand = "bun packages/bot/src/index.ts"
 
 # Number of replicas (1 for stateful SQLite app)
 numReplicas = 1

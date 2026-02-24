@@ -5,6 +5,7 @@
     "dockerfilePath": "Dockerfile"
   },
   "deploy": {
+    "startCommand": "bun packages/bot/src/index.ts",
     "numReplicas": 1,
     "healthcheckPath": "/api/health",
     "healthcheckTimeout": 30,
