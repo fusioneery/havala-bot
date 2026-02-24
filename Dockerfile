@@ -21,7 +21,8 @@ COPY packages/bot/package.json packages/bot/
 COPY packages/mini-app/package.json packages/mini-app/
 
 # Install dependencies (frozen lockfile for reproducible builds)
-RUN bun install --frozen-lockfile
+# --ignore-scripts: skip better-sqlite3 native build (devDep for drizzle-kit only; runtime uses bun:sqlite)
+RUN bun install --frozen-lockfile --ignore-scripts
 
 # =============================================================================
 # Builder stage - build the application
