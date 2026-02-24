@@ -1,0 +1,6 @@
+{"ts":"2026-02-24T18:53:50.876401+00:00","iteration":0,"hat":"loop","topic":"task.start","triggered":"planner","payload":"используй railway cli для того чтобы отдебажить успешный деплой hawala-bot на него. проект 8a8167f8-e016-488c-935a-a6fb5869f63d или prolific-luck"}
+{"payload":"maybe its easier and faster to test those changes locally? i do have docker too","topic":"human.guidance","ts":"2026-02-24T19:09:52.880678+00:00"}
+{"payload":"i ve aborted the last deployment","topic":"human.guidance","ts":"2026-02-24T19:27:57.834413+00:00"}
+{"payload":"братан а ты не хочешь локально все же сначала позапускать всё это добро прежде чем на railway пробовать??","topic":"human.guidance","ts":"2026-02-24T19:31:42.410052+00:00"}
+{"payload":"Railway deploy debugged and fixed. Issues: 1) bot crashed from 409 conflict (dual instances), 2) MINI_APP_URL pointed to cloudflare tunnel. Fixes: updated MINI_APP_URL to Railway domain, redeployed bot service successfully. @hawala/mini-app service should be deleted from dashboard (unnecessary).","topic":"LOOP_COMPLETE","ts":"2026-02-24T20:03:31.583823+00:00"}
+{"ts":"2026-02-24T20:03:41.652134+00:00","iteration":3,"hat":"loop","topic":"loop.terminate","payload":"## Reason\ncompleted\n\n## Status\nAll tasks completed successfully.\n\n## Summary\n- Iterations: 3\n- Duration: 1h 9m 50s\n- Exit code: 0"}

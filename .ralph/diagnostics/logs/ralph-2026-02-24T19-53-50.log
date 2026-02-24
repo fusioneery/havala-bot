@@ -1,0 +1,23 @@
+2026-02-24T18:53:50.979960Z  INFO ralph_core::event_loop: Memory injection check: enabled=true, inject=Auto, workspace_root="/Users/vlad/projects/hawala-bot"
+2026-02-24T18:53:50.980325Z  INFO ralph_core::event_loop: Looking for memories at: "/Users/vlad/projects/hawala-bot/.ralph/agent/memories.md" (exists: true)
+2026-02-24T18:53:50.983599Z  INFO ralph_core::event_loop: Successfully loaded 1 memories from store
+2026-02-24T18:53:50.983607Z  INFO ralph_core::event_loop: Injecting 1 memories (378 chars) into prompt
+2026-02-24T18:53:50.984009Z  INFO ralph_core::event_loop: Injecting ready tasks (0 ready, 0 open, 1 closed) into prompt
+2026-02-24T19:48:10.980725Z  INFO ralph_core::event_loop: Persisted human guidance to scratchpad count=3
+2026-02-24T19:48:10.989783Z  INFO ralph_core::event_loop: Memory injection check: enabled=true, inject=Auto, workspace_root="/Users/vlad/projects/hawala-bot"
+2026-02-24T19:48:10.991866Z  INFO ralph_core::event_loop: Looking for memories at: "/Users/vlad/projects/hawala-bot/.ralph/agent/memories.md" (exists: true)
+2026-02-24T19:48:10.998362Z  INFO ralph_core::event_loop: Successfully loaded 1 memories from store
+2026-02-24T19:48:10.998384Z  INFO ralph_core::event_loop: Injecting 1 memories (378 chars) into prompt
+2026-02-24T19:48:11.002990Z  INFO ralph_core::event_loop: Injecting scratchpad (439 chars) into prompt
+2026-02-24T19:48:11.003478Z  INFO ralph_core::event_loop: Injecting ready tasks (0 ready, 0 open, 1 closed) into prompt
+2026-02-24T19:52:41.189550Z  INFO ralph_core::event_loop: Memory injection check: enabled=true, inject=Auto, workspace_root="/Users/vlad/projects/hawala-bot"
+2026-02-24T19:52:41.190191Z  INFO ralph_core::event_loop: Looking for memories at: "/Users/vlad/projects/hawala-bot/.ralph/agent/memories.md" (exists: true)
+2026-02-24T19:52:41.192979Z  INFO ralph_core::event_loop: Successfully loaded 1 memories from store
+2026-02-24T19:52:41.193003Z  INFO ralph_core::event_loop: Injecting 1 memories (378 chars) into prompt
+2026-02-24T19:52:41.193683Z  INFO ralph_core::event_loop: Injecting scratchpad (439 chars) into prompt
+2026-02-24T19:52:41.194449Z  INFO ralph_core::event_loop: Injecting ready tasks (0 ready, 0 open, 1 closed) into prompt
+2026-02-24T20:03:41.649869Z  INFO ralph_core::event_loop: Completion event detected in JSONL topic=LOOP_COMPLETE
+2026-02-24T20:03:41.651306Z  INFO ralph_core::event_loop: Completion event detected - terminating
+2026-02-24T20:03:41.651888Z  INFO ralph::loop_runner: Completion event LOOP_COMPLETE detected.
+2026-02-24T20:03:41.652120Z  INFO ralph_core::event_loop: Wrapping up: completed. 3 iterations in 1h 9m 50s. reason=completed iterations=3 duration=1h 9m 50s
+2026-02-24T20:03:41.692811Z  INFO ralph_core::landing: Beginning landing sequence loop_id=primary
