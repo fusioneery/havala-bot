@@ -12,7 +12,10 @@ export async function createServer() {
   const server = Fastify({ logger: true });
 
   await server.register(cors, {
-    origin: config.isProd ? false : ['http://localhost:5173'],
+    origin: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-telegram-init-data'],
+    credentials: true,
   });
 
   server.addHook('preHandler', async (request, reply) => {

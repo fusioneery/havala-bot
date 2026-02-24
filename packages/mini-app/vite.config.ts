@@ -12,6 +12,11 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    cors: {
+      origin: '*',
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'x-telegram-init-data'],
+    },
     allowedHosts: ['floral-zum-mae-charger.trycloudflare.com', 'localhost', '127.0.0.1'],
     proxy: {
       '/api': {
