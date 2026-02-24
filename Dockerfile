@@ -59,8 +59,9 @@ LABEL org.opencontainers.image.source="https://github.com/fusioneery/hawala-bot"
 WORKDIR /app
 
 # Create non-root user for security
-RUN addgroup --system --gid 1001 hawala \
-    && adduser --system --uid 1001 --ingroup hawala hawala
+# Use groupadd/useradd (shadow-utils) — addgroup/adduser not available in bun:1-slim
+RUN groupadd --system --gid 1001 hawala \
+    && useradd --system --uid 1001 --gid hawala --no-create-home hawala
 
 # Create data directory for SQLite with proper permissions
 RUN mkdir -p /app/data && chown -R hawala:hawala /app/data
