@@ -18,6 +18,9 @@ const groupMessagePipeline = new GroupMessagePipeline({
   sendDirectMessage: async (telegramId, text, options) => {
     await bot.api.sendMessage(telegramId, text, options);
   },
+  setMessageReaction: async (chatId, messageId, emoji) => {
+    await bot.api.setMessageReaction(chatId, messageId, [{ type: 'emoji', emoji: emoji as '👍' }]);
+  },
 });
 
 async function getAdminUsernames(): Promise<string[]> {
@@ -212,6 +215,19 @@ bot.on('message:text', async (ctx, next) => {
   await next();
 });
 
+// Handle edited messages in groups: detect offer changes via LLM
+bot.on('edited_message:text', async (ctx) => {
+  const chat = ctx.chat;
+  const from = ctx.from;
+  const message = ctx.editedMessage;
+  const text = message.text?.trim();
+  const isGroupChat = chat && ['group', 'supergroup'].includes(chat.type);
+
+  if (!isGroupChat || !from || from.is_bot || !text) return;
+
+  void groupMessagePipeline.handleEditedMessage(chat.id, message.message_id, text);
+});
+
 // Track group members on join/leave (only for trusted groups)
 bot.on('chat_member', async (ctx) => {
   const update = ctx.update.chat_member;
@@ -318,9 +334,10 @@ bot.command('start', async (ctx) => {
   });
 });
 
-// Handle forwarded messages — add to trust circles
-bot.on('message:forward_origin', async (ctx) => {
-  // TODO: extract forwarded user, ask friend/acquaintance
+// Handle forwarded messages — add to trust circles (only in private chats)
+bot.on('message:forward_origin', async (ctx, next) => {
+  if (ctx.chat?.type !== 'private') return next();
+
   const keyboard = new InlineKeyboard()
     .text('Друг', 'trust:friend')
     .text('Знакомый', 'trust:acquaintance');

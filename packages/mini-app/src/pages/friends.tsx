@@ -120,7 +120,7 @@ export default function FriendsPage() {
   return (
     <div className="w-full h-dvh flex flex-col bg-background text-foreground">
       {/* Header */}
-      <header className="flex items-center justify-between px-5 pt-5 pb-4">
+      <header className="flex items-center justify-between px-5 pt-2.5 pb-4">
         <h1 className="text-[20px] font-bold tracking-tight">Друзья</h1>
         <button
           onClick={handleInviteFriend}

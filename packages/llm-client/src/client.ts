@@ -1,5 +1,5 @@
 import { CURRENCIES, PAYMENT_METHOD_GROUPS, getDefaultPaymentMethods, type Currency, type GroupMessage, type ParsedOffer, type ParsedPaymentMethodGroup, type PaymentMethodGroup } from '@hawala/shared';
-import { EXTRACT_OFFERS_SYSTEM_PROMPT } from './prompts';
+import { ANALYZE_OFFER_EDIT_PROMPT, EXTRACT_OFFERS_SYSTEM_PROMPT } from './prompts';
 
 const ALLOWED_CURRENCIES = new Set<string>(CURRENCIES);
 const ALLOWED_PAYMENT_METHODS = new Set<string>(PAYMENT_METHOD_GROUPS);
@@ -8,6 +8,20 @@ export interface LlmClientConfig {
   apiKey: string;
   model?: string;
   baseUrl?: string;
+}
+
+export interface OfferEditAction {
+  action: 'delete' | 'update' | 'no_change';
+  updates?: {
+    amount?: number;
+    amountCurrency?: string;
+    fromCurrency?: string;
+    toCurrency?: string;
+    partial?: boolean;
+    partialThreshold?: number;
+    takePaymentMethods?: ParsedPaymentMethodGroup[];
+    givePaymentMethods?: ParsedPaymentMethodGroup[];
+  };
 }
 
 export class LlmClient {
@@ -80,6 +94,72 @@ export class LlmClient {
     console.log('[LLM] Normalized offers:', JSON.stringify(normalizedOffers, null, 2));
 
     return normalizedOffers;
+  }
+
+  async analyzeOfferEdit(oldText: string, newText: string, model?: string): Promise<OfferEditAction> {
+    const userContent = `ORIGINAL MESSAGE:\n${oldText}\n\nEDITED MESSAGE:\n${newText}`;
+
+    const response = await fetch(`${this.baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: model || this.model,
+        messages: [
+          { role: 'system', content: ANALYZE_OFFER_EDIT_PROMPT },
+          { role: 'user', content: userContent },
+        ],
+        temperature: 0,
+        response_format: { type: 'json_object' },
+      }),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`OpenRouter API error ${response.status}: ${text}`);
+    }
+
+    const data = await response.json() as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
+
+    const content = data.choices?.[0]?.message?.content;
+    if (!content) {
+      throw new Error('Empty response from LLM for offer edit analysis');
+    }
+
+    console.log('[LLM] Edit analysis content:', content);
+
+    const parsed = JSON.parse(content) as Record<string, unknown>;
+    const action = parsed.action;
+
+    if (action === 'delete') {
+      return { action: 'delete' };
+    }
+
+    if (action === 'update' && parsed.updates && typeof parsed.updates === 'object') {
+      const raw = parsed.updates as Record<string, unknown>;
+      const updates: OfferEditAction['updates'] = {};
+
+      if (typeof raw.amount === 'number') updates.amount = raw.amount;
+      if (isCurrency(raw.amount_currency)) updates.amountCurrency = raw.amount_currency;
+      if (isCurrency(raw.from_currency)) updates.fromCurrency = raw.from_currency;
+      if (isCurrency(raw.to_currency)) updates.toCurrency = raw.to_currency;
+      if (typeof raw.partial === 'boolean') updates.partial = raw.partial;
+      if (typeof raw.partial_threshold === 'number') updates.partialThreshold = raw.partial_threshold;
+      if (Array.isArray(raw.take_payment_methods)) {
+        updates.takePaymentMethods = normalizeMethodGroups(raw.take_payment_methods);
+      }
+      if (Array.isArray(raw.give_payment_methods)) {
+        updates.givePaymentMethods = normalizeMethodGroups(raw.give_payment_methods);
+      }
+
+      return { action: 'update', updates };
+    }
+
+    return { action: 'no_change' };
   }
 }
 

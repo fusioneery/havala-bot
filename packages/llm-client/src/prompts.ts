@@ -104,3 +104,46 @@ Reasoning:
 ---
 (Remember: Your task is to analyze each message in the batch, first explaining the logic (in Russian), then combining the results into a single JSON with offers according to the new scheme. Finish processing only after parsing each message.)
 `;
+
+export const ANALYZE_OFFER_EDIT_PROMPT = `
+You are analyzing an edited exchange offer message. You receive the ORIGINAL message text and the NEW (edited) message text.
+
+Your task: determine what changed and return a structured JSON action.
+
+# Rules
+
+1. If the entire new message is struck through (using ~~strikethrough~~, or the Unicode strikethrough characters ̶), or if the person wrote "закрыто", "неактуально", "отмена", "отбой", "уже нашёл", "done", "closed" etc. — the offer should be DELETED.
+2. If the message contains "UPD", "upd", "обновление", or visible edits that change the offer parameters (amount, currency, payment methods, partial) — analyze what changed and return UPDATE with only the changed fields.
+3. If the edit is cosmetic (typo fix, formatting) and doesn't change the offer substance — return NO_CHANGE.
+
+# Output format
+
+Return JSON with:
+
+{
+  "reasoning": "explanation in Russian of what changed",
+  "action": "delete" | "update" | "no_change",
+  "updates": {
+    // Only present when action is "update". Include ONLY changed fields:
+    "amount": number | null,
+    "amount_currency": "EUR" | "RUB" | ... | null,
+    "from_currency": "EUR" | "RUB" | ... | null,
+    "to_currency": "EUR" | "RUB" | ... | null,
+    "partial": true | false | null,
+    "partial_threshold": number | null,
+    "take_payment_methods": [...] | null,
+    "give_payment_methods": [...] | null
+  }
+}
+
+Fields set to null in "updates" mean "not changed" — do NOT include unchanged fields at all.
+
+PaymentMethodGroup format is the same as before:
+- currency: ISO currency code
+- methods: array of ONLY ["russian_banks", "local_banks", "swift", "crypto"]
+
+# Important
+- Always provide reasoning first (in Russian), then the JSON.
+- If amount changed, always include amount_currency too.
+- Strikethrough text (~~text~~ or Unicode ̶s̶t̶r̶i̶k̶e̶t̶h̶r̶o̶u̶g̶h̶) means that part is cancelled/removed.
+`;

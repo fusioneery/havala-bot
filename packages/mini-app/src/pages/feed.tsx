@@ -29,7 +29,7 @@ export default function FeedPage() {
 
   return (
     <div className="w-full h-dvh overflow-y-auto bg-background text-foreground">
-      <header className="px-6 pt-7 pb-3">
+      <header className="px-6 pt-3.5 pb-3">
         <h1 className="text-[28px] font-bold tracking-tight">Лента</h1>
         <div className="flex gap-2 mt-3">
           {(['friends', 'acquaintances'] as const).map((f) => (

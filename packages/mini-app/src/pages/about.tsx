@@ -15,7 +15,7 @@ export default function AboutPage() {
 
   return (
     <div className="w-full h-dvh flex flex-col bg-background text-foreground">
-      <header className="px-5 pt-5 pb-4">
+      <header className="px-5 pt-2.5 pb-4">
         <h1 className="text-[17px] font-semibold tracking-tight">О проекте</h1>
       </header>
 

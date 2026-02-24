@@ -46,6 +46,7 @@ export const config = {
   botToken: process.env.BOT_TOKEN!,
   openrouterApiKey: process.env.OPENROUTER_API_KEY!,
   openrouterModel: process.env.OPENROUTER_MODEL || 'openai/gpt-5-nano',
+  openrouterSmartModel: process.env.OPENROUTER_SMART_MODEL || 'openai/gpt-5-mini',
   dbFileName: process.env.DB_FILE_NAME || './data/hawala.db',
   trustedGroupIds: parseNumberList(process.env.TRUSTED_GROUP_IDS || ''),
   trustedGroupTopics: parseTrustedGroupTopics(process.env.CHAT_TO_TOPICS || ''),
@@ -67,4 +68,7 @@ export const config = {
 
   // Cleanup old offers (in days)
   offerMaxAgeDays: Number(process.env.OFFER_MAX_AGE_DAYS) || 30,
+
+  // Feature flags
+  reactToParsedOffers: process.env.REACT_TO_PARSED_OFFERS === 'true' || process.env.REACT_TO_PARSED_OFFERS === '1',
 } as const;

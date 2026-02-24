@@ -92,7 +92,7 @@ function HomePage() {
 
   return (
     <div className="w-full h-dvh overflow-y-auto bg-background text-foreground">
-      <header className="px-6 pt-7 pb-3">
+      <header className="px-6 pt-3.5 pb-3">
         <div className="flex items-center justify-between">
           <h1 className="text-[28px] font-bold tracking-tight">Халва</h1>
           <button

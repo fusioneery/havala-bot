@@ -49,10 +49,11 @@ interface MatchNotificationKeyboard {
 }
 
 interface GroupMessagePipelineOptions {
-  sendDirectMessage: (telegramId: number, text: string, options?: { 
+  sendDirectMessage: (telegramId: number, text: string, options?: {
     parse_mode?: 'Markdown' | 'HTML';
     reply_markup?: MatchNotificationKeyboard;
   }) => Promise<void>;
+  setMessageReaction?: (chatId: number, messageId: number, emoji: string) => Promise<void>;
 }
 
 export class GroupMessagePipeline {
@@ -382,6 +383,14 @@ export class GroupMessagePipeline {
         authorId: schema.offers.authorId,
       });
 
+    if (config.reactToParsedOffers && this.options.setMessageReaction) {
+      try {
+        await this.options.setMessageReaction(source.chatId, source.messageId, '👍');
+      } catch (err) {
+        console.error('[Pipeline] Failed to set reaction chatId=%d msgId=%d:', source.chatId, source.messageId, err);
+      }
+    }
+
     return {
       id: insertedOffer.id,
       authorId: insertedOffer.authorId,
@@ -399,6 +408,121 @@ export class GroupMessagePipeline {
       messageId: source.messageId,
       messageThreadId: source.messageThreadId,
     };
+  }
+
+  async handleEditedMessage(chatId: number, messageId: number, newText: string): Promise<void> {
+    if (!this.isTrustedChat(chatId)) return;
+
+    // Find the offer by telegram message ID + group
+    const [group] = await db
+      .select({ id: schema.trustedGroups.id })
+      .from(schema.trustedGroups)
+      .where(eq(schema.trustedGroups.telegramChatId, chatId))
+      .limit(1);
+
+    if (!group) return;
+
+    const [existingOffer] = await db
+      .select({
+        id: schema.offers.id,
+        originalMessageText: schema.offers.originalMessageText,
+        status: schema.offers.status,
+      })
+      .from(schema.offers)
+      .where(
+        and(
+          eq(schema.offers.groupId, group.id),
+          eq(schema.offers.telegramMessageId, messageId),
+          eq(schema.offers.status, 'active'),
+        ),
+      )
+      .limit(1);
+
+    if (!existingOffer || !existingOffer.originalMessageText) return;
+
+    const oldText = existingOffer.originalMessageText;
+    if (oldText === newText) return;
+
+    console.log(
+      '[Pipeline] EDIT chatId=%d msgId=%d offerId=%d',
+      chatId,
+      messageId,
+      existingOffer.id,
+    );
+
+    let editAction;
+    try {
+      editAction = await this.llmClient.analyzeOfferEdit(oldText, newText, config.openrouterSmartModel);
+    } catch (error) {
+      console.error(
+        '[Pipeline] LLM edit analysis failed offerId=%d:',
+        existingOffer.id,
+        error instanceof Error ? error.message : String(error),
+      );
+      return;
+    }
+
+    console.log(
+      '[Pipeline] EDIT RESULT offerId=%d action=%s',
+      existingOffer.id,
+      editAction.action,
+    );
+
+    if (editAction.action === 'delete') {
+      await db
+        .update(schema.offers)
+        .set({ status: 'cancelled', updatedAt: new Date(), originalMessageText: newText })
+        .where(eq(schema.offers.id, existingOffer.id));
+
+      console.log('[Pipeline] EDIT → CANCELLED offerId=%d', existingOffer.id);
+      return;
+    }
+
+    if (editAction.action === 'update' && editAction.updates) {
+      const u = editAction.updates;
+      const set: Record<string, unknown> = {
+        updatedAt: new Date(),
+        originalMessageText: newText,
+      };
+
+      if (u.amount != null) set.amount = u.amount;
+      if (u.amountCurrency) set.amountCurrency = u.amountCurrency;
+      if (u.fromCurrency) set.fromCurrency = u.fromCurrency;
+      if (u.toCurrency) set.toCurrency = u.toCurrency;
+      if (u.partial != null) set.partial = u.partial;
+      if (u.partialThreshold != null) set.partialThreshold = u.partialThreshold;
+      if (u.takePaymentMethods || u.givePaymentMethods) {
+        // Need to merge with existing payment methods if only one side changed
+        const existing = await db
+          .select({ paymentMethods: schema.offers.paymentMethods })
+          .from(schema.offers)
+          .where(eq(schema.offers.id, existingOffer.id))
+          .limit(1);
+        const currentPM = JSON.parse(existing[0]?.paymentMethods ?? '{"take":[],"give":[]}');
+        set.paymentMethods = JSON.stringify({
+          take: u.takePaymentMethods ?? currentPM.take,
+          give: u.givePaymentMethods ?? currentPM.give,
+        });
+      }
+
+      await db
+        .update(schema.offers)
+        .set(set)
+        .where(eq(schema.offers.id, existingOffer.id));
+
+      console.log(
+        '[Pipeline] EDIT → UPDATED offerId=%d fields=%s',
+        existingOffer.id,
+        Object.keys(set).filter((k) => k !== 'updatedAt' && k !== 'originalMessageText').join(','),
+      );
+      return;
+    }
+
+    // no_change — just update the stored text
+    await db
+      .update(schema.offers)
+      .set({ originalMessageText: newText, updatedAt: new Date() })
+      .where(eq(schema.offers.id, existingOffer.id));
   }
 
   private async upsertUser(message: BufferedGroupMessage): Promise<{ id: number }> {
