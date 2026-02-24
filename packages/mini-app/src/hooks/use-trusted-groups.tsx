@@ -1,3 +1,4 @@
+import { apiFetch } from '@/lib/api';
 import type { PropsWithChildren } from 'react';
 import { createContext, useContext, useEffect, useState } from 'react';
 
@@ -21,7 +22,7 @@ export function TrustedGroupsProvider(props: PropsWithChildren) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/groups')
+    apiFetch('/api/groups')
       .then((res) => res.json())
       .then((data) => setGroups(data))
       .catch(() => setGroups([]))

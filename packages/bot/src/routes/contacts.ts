@@ -3,13 +3,13 @@ import { eq, and, like, or, notInArray, ne } from 'drizzle-orm';
 import { db, schema } from '../db';
 import { config } from '../config';
 import type { ContactListItem, AddContactRequest, UserSearchResult } from '@hawala/shared';
+import { resolveUserId } from '../lib/auth';
 
 export async function contactRoutes(server: FastifyInstance) {
-  // For dev: hardcoded user_id=1. In prod, extract from Telegram initData.
-  const userId = 1;
-
   // GET / — list contacts
-  server.get('/', async (_request, reply) => {
+  server.get('/', async (request, reply) => {
+    const userId = await resolveUserId(request);
+    if (!userId) return reply.status(401).send({ error: 'Unauthorized' });
     const rows = await db
       .select({
         id: schema.trustRelations.id,
@@ -37,6 +37,9 @@ export async function contactRoutes(server: FastifyInstance) {
 
   // POST / — add or update contact
   server.post<{ Body: AddContactRequest }>('/', async (request, reply) => {
+    const userId = await resolveUserId(request);
+    if (!userId) return reply.status(401).send({ error: 'Unauthorized' });
+
     if (!request.body) {
       return reply.status(400).send({ error: 'Missing request body' });
     }
@@ -57,6 +60,9 @@ export async function contactRoutes(server: FastifyInstance) {
 
   // DELETE /:id — remove contact
   server.delete<{ Params: { id: string } }>('/:id', async (request, reply) => {
+    const userId = await resolveUserId(request);
+    if (!userId) return reply.status(401).send({ error: 'Unauthorized' });
+
     const id = Number(request.params.id);
 
     await db
@@ -68,6 +74,9 @@ export async function contactRoutes(server: FastifyInstance) {
 
   // GET /search?q= — search users to add
   server.get<{ Querystring: { q?: string } }>('/search', async (request, reply) => {
+    const userId = await resolveUserId(request);
+    if (!userId) return reply.status(401).send({ error: 'Unauthorized' });
+
     const q = request.query.q?.trim();
     if (!q) return reply.send([]);
 
@@ -103,7 +112,10 @@ export async function contactRoutes(server: FastifyInstance) {
   });
 
   // GET /invite-link — generate or get existing referral link
-  server.get('/invite-link', async (_request, reply) => {
+  server.get('/invite-link', async (request, reply) => {
+    const userId = await resolveUserId(request);
+    if (!userId) return reply.status(401).send({ error: 'Unauthorized' });
+
     // Check if user already has a referral code
     let [existing] = await db
       .select({ code: schema.referralCodes.code })

@@ -1,6 +1,7 @@
 import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { GroupTooltip } from '@/components/ui/group-tooltip';
 import { useTrustedGroups } from '@/hooks/use-trusted-groups';
+import { apiFetch } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import type { ContactListItem, Visibility } from '@hawala/shared';
 import { ChevronRight, CircleHelp, Users } from 'lucide-react';
@@ -14,7 +15,7 @@ function useInviteFriend() {
     if (inviting) return;
     setInviting(true);
     try {
-      const res = await fetch('/api/contacts/invite-link');
+      const res = await apiFetch('/api/contacts/invite-link');
       if (!res.ok) throw new Error('Failed to get invite link');
       const { link } = await res.json();
 
@@ -67,7 +68,7 @@ export function VisibilitySelector({ value, onChange }: VisibilitySelectorProps)
   const [friendsCount, setFriendsCount] = useState<number | null>(null);
 
   useEffect(() => {
-    fetch('/api/contacts')
+    apiFetch('/api/contacts')
       .then((res) => res.json())
       .then((contacts: ContactListItem[]) => {
         const friends = contacts.filter((c) => c.type === 'friend');

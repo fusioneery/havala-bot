@@ -1,10 +1,12 @@
 import type { FastifyInstance } from 'fastify';
 import { eq, and, desc, inArray } from 'drizzle-orm';
 import { db, schema } from '../db';
+import { resolveUserId } from '../lib/auth';
 
 export async function feedRoutes(server: FastifyInstance) {
   server.get<{ Querystring: { filter?: string } }>('/', async (request, reply) => {
-    const userId = 1; // TODO: extract from Telegram initData in prod
+    const userId = await resolveUserId(request);
+    if (!userId) return reply.status(401).send({ error: 'Unauthorized' });
     const filter = request.query.filter ?? 'friends';
 
     // 1. Find trusted user IDs based on filter

@@ -4,6 +4,7 @@ import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { GroupTooltip } from '@/components/ui/group-tooltip';
 import { ProgressiveBlur } from '@/components/ui/progressive-blur';
 import { TrustedGroupsProvider, useTrustedGroups } from '@/hooks/use-trusted-groups';
+import { apiFetch } from '@/lib/api';
 import AboutPage from '@/pages/about';
 import CreateOrderPage from '@/pages/create-order';
 import FeedPage from '@/pages/feed';
@@ -68,7 +69,7 @@ function HomePage() {
   const [hasVisitedAbout] = useState(() => localStorage.getItem(LS_KEY_VISITED_ABOUT) === '1');
 
   useEffect(() => {
-    fetch('/api/offers')
+    apiFetch('/api/offers')
       .then((res) => res.json())
       .then((data) => setOffers(data))
       .catch(console.error)
@@ -80,7 +81,7 @@ function HomePage() {
   const confirmCancel = useCallback(async () => {
     if (cancelId === null) return;
     try {
-      const res = await fetch(`/api/offers/${cancelId}`, { method: 'DELETE' });
+      const res = await apiFetch(`/api/offers/${cancelId}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Cancel failed');
       setOffers((prev) => prev.filter((o) => o.id !== cancelId));
     } catch (err) {

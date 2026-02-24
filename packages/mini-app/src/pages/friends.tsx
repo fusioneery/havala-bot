@@ -1,3 +1,4 @@
+import { apiFetch } from '@/lib/api';
 import type { ContactListItem, TrustType, UserSearchResult } from '@hawala/shared';
 import { Search, UserPlus, Users, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -24,7 +25,7 @@ export default function FriendsPage() {
     if (inviting) return;
     setInviting(true);
     try {
-      const res = await fetch('/api/contacts/invite-link');
+      const res = await apiFetch('/api/contacts/invite-link');
       if (!res.ok) throw new Error('Failed to get invite link');
       const { link } = await res.json();
 
@@ -47,7 +48,7 @@ export default function FriendsPage() {
 
   const fetchContacts = useCallback(async () => {
     try {
-      const res = await fetch('/api/contacts');
+      const res = await apiFetch('/api/contacts');
       if (res.ok) setContacts(await res.json());
     } catch (err) {
       console.error('Failed to fetch contacts:', err);
@@ -70,7 +71,7 @@ export default function FriendsPage() {
     searchTimeout.current = setTimeout(async () => {
       setSearching(true);
       try {
-        const res = await fetch(`/api/contacts/search?q=${encodeURIComponent(query)}`);
+        const res = await apiFetch(`/api/contacts/search?q=${encodeURIComponent(query)}`);
         if (res.ok) setSearchResults(await res.json());
       } catch (err) {
         console.error('Search failed:', err);
@@ -83,7 +84,7 @@ export default function FriendsPage() {
 
   const addContact = useCallback(async (targetUserId: number, type: TrustType) => {
     try {
-      const res = await fetch('/api/contacts', {
+      const res = await apiFetch('/api/contacts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ targetUserId, type }),
@@ -102,7 +103,7 @@ export default function FriendsPage() {
     if (!contactToRemove) return;
     setRemoving(true);
     try {
-      const res = await fetch(`/api/contacts/${contactToRemove.id}`, { method: 'DELETE' });
+      const res = await apiFetch(`/api/contacts/${contactToRemove.id}`, { method: 'DELETE' });
       if (res.ok) {
         setContacts((prev) => prev.filter((c) => c.id !== contactToRemove.id));
         setContactToRemove(null);

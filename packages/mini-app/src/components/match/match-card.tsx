@@ -1,4 +1,5 @@
 import { Skeleton } from '@/components/ui/skeleton';
+import { apiFetch } from '@/lib/api';
 import { buildDmUrl, cn, getGroupLink } from '@/lib/utils';
 import type { MatchResult, TrustType } from '@hawala/shared';
 import { ExternalLink, MessageCircle } from 'lucide-react';
@@ -39,7 +40,7 @@ export function MatchCard({ match, searchedAt }: MatchCardProps) {
       ? [offer.fromCurrency, offer.toCurrency]
       : [offer.toCurrency, offer.fromCurrency];
 
-    fetch(`/api/rates/market?from=${from}&to=${to}`)
+    apiFetch(`/api/rates/market?from=${from}&to=${to}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data: { rate?: number } | null) => {
         if (cancelled || !data?.rate) return;

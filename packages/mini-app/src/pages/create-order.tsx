@@ -8,6 +8,7 @@ import { VisibilitySelector } from '@/components/order/visibility-selector';
 import { AccordionSection } from '@/components/ui/accordion-section';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { useAutoOpenAccordions } from '@/hooks/use-auto-open-accordions';
+import { apiFetch } from '@/lib/api';
 import { useBackButton } from '@/hooks/use-back-button';
 import { usePersistedFormState } from '@/hooks/use-persisted-state';
 import { getDefaultPaymentMethod, type Currency, type PaymentMethodGroup, type SearchRequest, type SearchResponse, type Visibility } from '@hawala/shared';
@@ -61,7 +62,7 @@ export default function CreateOrderPage() {
   useEffect(() => {
     if (!isUsdtRubPair) return;
     setRatesLoading(true);
-    fetch('/api/rates')
+    apiFetch('/api/rates')
       .then((res) => res.json())
       .then((data) => {
         const v = parseFloat(data.vas3k.rate);
@@ -80,7 +81,7 @@ export default function CreateOrderPage() {
     setRatesLoading(true);
     setMarketRate(null);
     setMarketRateSource('market');
-    fetch(`/api/rates/market?from=${fromCurrency}&to=${toCurrency}`)
+    apiFetch(`/api/rates/market?from=${fromCurrency}&to=${toCurrency}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.rate) {
@@ -237,7 +238,7 @@ export default function CreateOrderPage() {
     };
 
     try {
-      const res = await fetch('/api/offers/search', {
+      const res = await apiFetch('/api/offers/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),

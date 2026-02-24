@@ -3,6 +3,7 @@ import { eq, and, ne, desc, count, inArray } from 'drizzle-orm';
 import { db, schema } from '../db';
 import { config } from '../config';
 import { resolveTemplate, getPaymentMethodLabel } from '../lib/template';
+import { resolveUserId } from '../lib/auth';
 import {
   hasPaymentMethodOverlap,
   type MatchResult,
@@ -15,8 +16,9 @@ import { getRate } from '../services/rates';
 import { checkRateLimit, recordOfferRequest } from '../services/rate-limit';
 
 export async function offerRoutes(server: FastifyInstance) {
-  server.get('/', async (_request, reply) => {
-    const userId = 1;
+  server.get('/', async (request, reply) => {
+    const userId = await resolveUserId(request);
+    if (!userId) return reply.status(401).send({ error: 'Unauthorized' });
 
     const offers = await db
       .select()
@@ -124,7 +126,8 @@ export async function offerRoutes(server: FastifyInstance) {
   });
 
   server.delete<{ Params: { id: string } }>('/:id', async (request, reply) => {
-    const userId = 1;
+    const userId = await resolveUserId(request);
+    if (!userId) return reply.status(401).send({ error: 'Unauthorized' });
     const offerId = Number(request.params.id);
 
     const [offer] = await db
@@ -151,8 +154,8 @@ export async function offerRoutes(server: FastifyInstance) {
       givePaymentMethods, takePaymentMethods,
     } = request.body;
 
-    // For dev: hardcoded user_id=1. In prod, extract from Telegram initData.
-    const userId = 1;
+    const userId = await resolveUserId(request);
+    if (!userId) return reply.status(401).send({ error: 'Unauthorized' });
 
     // Check rate limits before creating offer
     const rateLimit = await checkRateLimit(userId);

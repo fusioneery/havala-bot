@@ -5,6 +5,7 @@ import {
   hasCryptoIcon,
   hasFlagIcon,
 } from '@/components/order/currency-icons';
+import { apiFetch } from '@/lib/api';
 import { buildDmUrl, cn, getGroupLink } from '@/lib/utils';
 import {
   getDefaultPaymentMethods,
@@ -194,7 +195,7 @@ export function OfferCard({ offer, onCancel }: OfferCardProps) {
   useEffect(() => {
     let cancelled = false;
     setConvertedAmount(null);
-    fetch(`/api/rates/market?from=${offer.fromCurrency}&to=${offer.toCurrency}`)
+    apiFetch(`/api/rates/market?from=${offer.fromCurrency}&to=${offer.toCurrency}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data: { rate?: number } | null) => {
         if (cancelled || !data?.rate) return;

@@ -1,4 +1,5 @@
 import { OfferCard } from '@/components/offer/offer-card';
+import { apiFetch } from '@/lib/api';
 import type { MyOfferItem } from '@hawala/shared';
 import { Loader2, Rss } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
@@ -13,7 +14,7 @@ export default function FeedPage() {
   const fetchFeed = useCallback(async (f: FeedFilter) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/feed?filter=${f}`);
+      const res = await apiFetch(`/api/feed?filter=${f}`);
       if (res.ok) setOffers(await res.json());
     } catch (err) {
       console.error('Feed fetch error:', err);
