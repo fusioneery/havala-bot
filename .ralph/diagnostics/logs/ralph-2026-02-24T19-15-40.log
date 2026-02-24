@@ -1,0 +1,14 @@
+2026-02-24T18:15:40.297408Z  INFO ralph: Creating scratchpad directory: /Users/vlad/projects/hawala-bot/.ralph/agent
+2026-02-24T18:15:40.410903Z  INFO ralph_core::event_loop: Memory injection check: enabled=true, inject=Auto, workspace_root="/Users/vlad/projects/hawala-bot"
+2026-02-24T18:15:40.410925Z  INFO ralph_core::event_loop: Looking for memories at: "/Users/vlad/projects/hawala-bot/.ralph/agent/memories.md" (exists: false)
+2026-02-24T18:15:40.410933Z  INFO ralph_core::event_loop: Successfully loaded 0 memories from store
+2026-02-24T18:15:40.410937Z  INFO ralph_core::event_loop: Memory store is empty - no memories to inject
+2026-02-24T18:18:58.950384Z  INFO ralph_core::event_loop: Memory injection check: enabled=true, inject=Auto, workspace_root="/Users/vlad/projects/hawala-bot"
+2026-02-24T18:18:58.950693Z  INFO ralph_core::event_loop: Looking for memories at: "/Users/vlad/projects/hawala-bot/.ralph/agent/memories.md" (exists: false)
+2026-02-24T18:18:58.950706Z  INFO ralph_core::event_loop: Successfully loaded 0 memories from store
+2026-02-24T18:18:58.950712Z  INFO ralph_core::event_loop: Memory store is empty - no memories to inject
+2026-02-24T18:27:10.799858Z  INFO ralph_core::event_loop: Completion event detected in JSONL topic=LOOP_COMPLETE
+2026-02-24T18:27:10.800552Z  INFO ralph_core::event_loop: Completion event detected - terminating
+2026-02-24T18:27:10.800934Z  INFO ralph::loop_runner: Completion event LOOP_COMPLETE detected.
+2026-02-24T18:27:10.801069Z  INFO ralph_core::event_loop: Wrapping up: completed. 2 iterations in 11m 30s. reason=completed iterations=2 duration=11m 30s
+2026-02-24T18:27:10.815560Z  INFO ralph_core::landing: Beginning landing sequence loop_id=primary
