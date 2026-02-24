@@ -37,7 +37,8 @@ COPY --from=deps /app/node_modules node_modules
 COPY . .
 
 # Build mini-app for production (vite only — tsc check runs in CI, not Docker)
-RUN cd packages/mini-app && bunx vite build
+# Use hoisted vite binary to ensure plugins are resolvable
+RUN cd packages/mini-app && ../../node_modules/.bin/vite build
 
 # Remove dev dependencies and unnecessary files
 RUN rm -rf packages/mini-app/src packages/mini-app/public packages/mini-app/*.config.* \
