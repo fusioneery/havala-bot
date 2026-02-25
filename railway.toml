@@ -17,7 +17,9 @@ watchPatterns = [
   "packages/**",
   "package.json",
   "bun.lock",
-  "Dockerfile"
+  "Dockerfile",
+  "entrypoint.sh",
+  "railway.toml"
 ]
 
 [deploy]
