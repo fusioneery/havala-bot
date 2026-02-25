@@ -41,6 +41,11 @@ WORKDIR /app
 RUN groupadd --system --gid 1001 hawala \
     && useradd --system --uid 1001 --gid hawala --no-create-home hawala
 
+# Install gosu for privilege dropping in entrypoint
+# (needed because Railway volume mounts override filesystem permissions)
+RUN apt-get update && apt-get install -y --no-install-recommends gosu \
+    && rm -rf /var/lib/apt/lists/*
+
 # Create data directory for SQLite with proper permissions
 RUN mkdir -p /app/data && chown -R hawala:hawala /app/data
 
@@ -48,9 +53,6 @@ RUN mkdir -p /app/data && chown -R hawala:hawala /app/data
 COPY --from=builder --chown=hawala:hawala /app/node_modules node_modules
 COPY --from=builder --chown=hawala:hawala /app/packages packages
 COPY --from=builder --chown=hawala:hawala /app/package.json .
-
-# Switch to non-root user
-USER hawala
 
 # Set environment variables
 ENV NODE_ENV=production
@@ -62,5 +64,7 @@ EXPOSE 3000
 
 # No HEALTHCHECK in Dockerfile — Railway handles it via config
 
-# Start the application
+# Entrypoint fixes volume permissions and drops to non-root user via gosu
+COPY --chmod=755 entrypoint.sh /app/entrypoint.sh
+ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["bun", "packages/bot/src/index.ts"]
