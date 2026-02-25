@@ -21,6 +21,10 @@ watchPatterns = [
 ]
 
 [deploy]
+# Override service-level npm startCommand — Railway dashboard default uses npm which isn't in bun:1-slim
+# Entrypoint fixes volume permissions and drops privileges to hawala user via gosu
+startCommand = "/app/entrypoint.sh bun packages/bot/src/index.ts"
+
 # Number of replicas (1 for stateful SQLite app)
 numReplicas = 1
 
