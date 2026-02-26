@@ -38,8 +38,9 @@ export function buildDmUrl(params: {
   groupName: string;
   telegramMessageLink: string | null;
   matchSource?: 'group_message' | 'hawala';
+  dealCode?: string | null;
 }): string | null {
-  const { username, groupName, telegramMessageLink, matchSource } = params;
+  const { username, groupName, telegramMessageLink, matchSource, dealCode } = params;
   if (!username) return null;
 
   const isHawalaMatch = matchSource === 'hawala' || !telegramMessageLink;
@@ -48,10 +49,14 @@ export function buildDmUrl(params: {
     ? 'Привет, нашёл твою заявку в Халве, давай поменяемся?'
     : `Привет, я из ${groupName}, давай поменяемся? ${telegramMessageLink}`;
 
+  const botLink = dealCode
+    ? `https://t.me/${BOT_LINK}?start=1${dealCode}`
+    : BOT_LINK;
+
   const messageText = [
     introLine,
     '',
-    `если что, нашёл тебя через Халву: ${BOT_LINK}`,
+    `если что, нашёл тебя через Халву: ${botLink}`,
   ].join('\n');
 
   return `https://t.me/${username}?text=${encodeURIComponent(messageText)}`;

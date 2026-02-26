@@ -1,4 +1,5 @@
 import { Skeleton } from '@/components/ui/skeleton';
+import { useDealCode } from '@/hooks/use-deal-code';
 import { apiFetch } from '@/lib/api';
 import { buildDmUrl, cn, getGroupLink, openTelegramLink } from '@/lib/utils';
 import type { MatchResult, TrustType } from '@hawala/shared';
@@ -23,6 +24,7 @@ function formatSearchedAt(dateStr: string): string {
 }
 
 export function MatchCard({ match, searchedAt }: MatchCardProps) {
+  const dealCode = useDealCode();
   const { author, offer, trustType, groupName, telegramMessageLink, matchSource } = match;
   const displayTrustType: TrustType = trustType ?? 'acquaintance';
   const [convertedAmount, setConvertedAmount] = useState<number | null>(null);
@@ -56,6 +58,7 @@ export function MatchCard({ match, searchedAt }: MatchCardProps) {
     groupName,
     telegramMessageLink,
     matchSource,
+    dealCode,
   }) ?? (isGroupMessageMatch ? telegramMessageLink : null);
 
   return (

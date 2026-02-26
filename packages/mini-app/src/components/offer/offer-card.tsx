@@ -5,6 +5,7 @@ import {
   hasCryptoIcon,
   hasFlagIcon,
 } from '@/components/order/currency-icons';
+import { useDealCode } from '@/hooks/use-deal-code';
 import { apiFetch } from '@/lib/api';
 import { buildDmUrl, cn, getGroupLink, openTelegramLink } from '@/lib/utils';
 import {
@@ -83,9 +84,10 @@ function pluralMatch(n: number): string {
 interface MatchRowProps {
   match: MyOfferMatchItem;
   compact?: boolean;
+  dealCode?: string | null;
 }
 
-function MatchRow({ match, compact = false }: MatchRowProps) {
+function MatchRow({ match, compact = false, dealCode }: MatchRowProps) {
   const displayTrustType: TrustType | null = match.trustType ?? 'acquaintance';
   const isGroupMessageMatch =
     (match.matchSource ?? (match.telegramMessageLink ? 'group_message' : 'hawala')) === 'group_message';
@@ -94,6 +96,7 @@ function MatchRow({ match, compact = false }: MatchRowProps) {
     groupName: match.groupName,
     telegramMessageLink: match.telegramMessageLink,
     matchSource: match.matchSource,
+    dealCode,
   });
 
   return (
@@ -164,6 +167,7 @@ function MatchRow({ match, compact = false }: MatchRowProps) {
 }
 
 export function OfferCard({ offer, onCancel }: OfferCardProps) {
+  const dealCode = useDealCode();
   const displayTrustType: TrustType | null = offer.topMatch
     ? offer.topMatch.trustType ?? 'acquaintance'
     : null;
@@ -208,6 +212,7 @@ export function OfferCard({ offer, onCancel }: OfferCardProps) {
         groupName: offer.topMatch.groupName,
         telegramMessageLink: offer.topMatch.telegramMessageLink,
         matchSource: offer.topMatch.matchSource,
+        dealCode,
       })
     : null;
 
@@ -403,7 +408,7 @@ export function OfferCard({ offer, onCancel }: OfferCardProps) {
             <div className="mt-2 bg-background rounded-[16px] divide-y divide-border/60">
               {extraMatches.map((match, i) => (
                 <div key={i} className="px-4 py-3">
-                  <MatchRow match={match} compact />
+                  <MatchRow match={match} compact dealCode={dealCode} />
                 </div>
               ))}
               <div className="px-4 py-3">

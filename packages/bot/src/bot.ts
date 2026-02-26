@@ -240,6 +240,12 @@ bot.command('start', async (ctx) => {
   const payload = ctx.match?.trim();
   let referrerUser: { id: number; firstName: string; telegramId: number } | null = null;
 
+  // Handle deal link: ?start=1{4-char-code} (prefix 1 = no friendship, just onboard)
+  if (payload?.startsWith('1') && payload.length === 5) {
+    // Deal codes identify the sender but intentionally skip friendship creation.
+    // Friendship is established later when a match participant clicks "Успешно".
+  }
+
   // Handle referral: ?start=0{4-char-code} (prefix 0 + 4-char base58 code)
   if (payload?.startsWith('0') && payload.length === 5) {
     const refCode = payload.slice(1);
@@ -529,6 +535,31 @@ bot.callbackQuery(/^match_success:/, async (ctx) => {
       .update(schema.offers)
       .set({ status: 'matched', updatedAt: new Date() })
       .where(eq(schema.offers.id, match.matchedOfferId));
+
+    // Create mutual friendship between match participants
+    const [initiatorUser] = await db
+      .select({ id: schema.users.id })
+      .from(schema.users)
+      .where(eq(schema.users.id, userOffer.userId))
+      .limit(1);
+
+    const [counterpartyUser] = await db
+      .select({ id: schema.users.id })
+      .from(schema.users)
+      .where(eq(schema.users.id, groupOffer.authorId))
+      .limit(1);
+
+    if (initiatorUser && counterpartyUser && initiatorUser.id !== counterpartyUser.id) {
+      await db
+        .insert(schema.trustRelations)
+        .values({ userId: initiatorUser.id, targetUserId: counterpartyUser.id, type: 'friend' })
+        .onConflictDoNothing();
+
+      await db
+        .insert(schema.trustRelations)
+        .values({ userId: counterpartyUser.id, targetUserId: initiatorUser.id, type: 'friend' })
+        .onConflictDoNothing();
+    }
 
     void debugLog('✅', 'Обмен успешен', {
       matchId,
