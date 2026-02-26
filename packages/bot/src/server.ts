@@ -1,5 +1,6 @@
 import Fastify, { type FastifyError } from 'fastify';
 import cors from '@fastify/cors';
+import fastifyStatic from '@fastify/static';
 import { config } from './config';
 import { contactRoutes } from './routes/contacts';
 import { groupRoutes } from './routes/groups';
@@ -10,6 +11,7 @@ import { avatarRoutes } from './routes/avatar';
 import { isBlacklisted } from './services/blacklist';
 import { authenticateRequest } from './lib/auth';
 import { debugError } from './services/debug-chat';
+import { getAvatarsDir } from './services/avatar-storage';
 
 export async function createServer() {
   const server = Fastify({
@@ -59,7 +61,7 @@ export async function createServer() {
   });
 
   server.addHook('preHandler', async (request, reply) => {
-    if (request.url === '/api/health') return;
+    if (request.url === '/api/health' || request.url.startsWith('/static/')) return;
 
     const authResult = await authenticateRequest(request);
     if (authResult.ok) {
@@ -81,13 +83,20 @@ export async function createServer() {
   server.register(groupRoutes, { prefix: '/api/groups' });
   server.register(avatarRoutes, { prefix: '/api/avatar' });
 
+  // Serve avatar images from disk (both dev and production)
+  await server.register(fastifyStatic, {
+    root: getAvatarsDir(),
+    prefix: '/static/avatars/',
+    decorateReply: false,
+  });
+
   // In production, serve mini-app static build
   if (config.isProd) {
-    const fastifyStatic = await import('@fastify/static');
-    await server.register(fastifyStatic.default, {
+    await server.register(fastifyStatic, {
       root: new URL('../../mini-app/dist', import.meta.url).pathname,
       prefix: '/',
       wildcard: true,
+      decorateReply: false,
     });
 
     // SPA fallback — serve index.html only for GET on non-API routes

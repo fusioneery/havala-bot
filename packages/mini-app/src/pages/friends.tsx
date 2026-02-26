@@ -163,7 +163,7 @@ export default function FriendsPage() {
                     key={user.id}
                     className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? 'border-t border-border' : ''}`}
                   >
-                    <UserAvatar telegramId={user.telegramId} firstName={user.firstName} />
+                    <UserAvatar telegramId={user.telegramId} firstName={user.firstName} avatarUrl={user.avatarUrl} />
                     <div className="flex-1 min-w-0">
                       <p className="text-[15px] font-medium truncate">{user.firstName}</p>
                       {user.username && (
@@ -210,7 +210,7 @@ export default function FriendsPage() {
                 key={contact.id}
                 className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? 'border-t border-border' : ''}`}
               >
-                <UserAvatar telegramId={contact.user.telegramId} firstName={contact.user.firstName} />
+                <UserAvatar telegramId={contact.user.telegramId} firstName={contact.user.firstName} avatarUrl={contact.user.avatarUrl} />
                 <div className="flex-1 min-w-0">
                   <p className="text-[15px] font-medium truncate">{contact.user.firstName}</p>
                   {contact.user.username && (
@@ -242,6 +242,7 @@ export default function FriendsPage() {
             <UserAvatar
               telegramId={contactToRemove.user.telegramId}
               firstName={contactToRemove.user.firstName}
+              avatarUrl={contactToRemove.user.avatarUrl}
               className="w-14 h-14 mb-2"
             />
           )}
