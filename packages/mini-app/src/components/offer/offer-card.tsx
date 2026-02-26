@@ -6,7 +6,7 @@ import {
   hasFlagIcon,
 } from '@/components/order/currency-icons';
 import { apiFetch } from '@/lib/api';
-import { buildDmUrl, cn, getGroupLink } from '@/lib/utils';
+import { buildDmUrl, cn, getGroupLink, openTelegramLink } from '@/lib/utils';
 import {
   getDefaultPaymentMethods,
   getPaymentGroupLabelForFiat,
@@ -15,6 +15,7 @@ import {
   type PaymentMethodGroup,
   type TrustType,
 } from '@hawala/shared';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ChevronUp, MessageCircle, UserCheck, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -135,14 +136,12 @@ function MatchRow({ match, compact = false }: MatchRowProps) {
           ) : isGroupMessageMatch && match.telegramMessageLink ? (
             <span className="text-muted-foreground">
               знакомый из{' '}
-              <a
-                href={getGroupLink(match.telegramMessageLink)}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                onClick={() => openTelegramLink(getGroupLink(match.telegramMessageLink!))}
                 className="text-foreground hover:underline"
               >
                 {match.groupName}
-              </a>
+              </button>
             </span>
           ) : (
             <span className="text-muted-foreground">знакомый из Халвы</span>
@@ -152,15 +151,13 @@ function MatchRow({ match, compact = false }: MatchRowProps) {
 
       {/* Write button */}
       {dmUrl && (
-        <a
-          href={dmUrl}
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
+          onClick={() => openTelegramLink(dmUrl)}
           className="h-8 px-3 rounded-full bg-primary text-primary-foreground text-[12px] font-semibold flex items-center gap-1 active:scale-95 transition shrink-0"
         >
           <MessageCircle className="w-3 h-3" />
           Написать
-        </a>
+        </button>
       )}
     </div>
   );
@@ -239,14 +236,18 @@ export function OfferCard({ offer, onCancel }: OfferCardProps) {
             <div className="text-[16px] font-semibold text-foreground">
               {offer.amount.toLocaleString('ru-RU').replace(',', '.')} {offer.fromCurrency} → {offer.toCurrency}
             </div>
-            {convertedAmount !== null && (
-              <div className="text-[13px] text-muted-foreground">
-                ≈ {convertedAmount >= 100
-                  ? Math.round(convertedAmount).toLocaleString('ru-RU')
-                  : convertedAmount.toLocaleString('ru-RU', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}{' '}
-                {offer.toCurrency}
-              </div>
-            )}
+            <div className="text-[13px] text-muted-foreground">
+              {convertedAmount !== null ? (
+                <>
+                  ≈ {convertedAmount >= 100
+                    ? Math.round(convertedAmount).toLocaleString('ru-RU')
+                    : convertedAmount.toLocaleString('ru-RU', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}{' '}
+                  {offer.toCurrency}
+                </>
+              ) : (
+                <Skeleton className="h-[18px] w-24 rounded-md" />
+              )}
+            </div>
             <div className="text-[13px] text-muted-foreground">
               {relativeTime(offer.createdAt)}
             </div>
@@ -363,29 +364,25 @@ export function OfferCard({ offer, onCancel }: OfferCardProps) {
                   ) : offer.topMatch.telegramMessageLink ? (
                     <span className="text-muted-foreground">
                       знакомый из{' '}
-                      <a
-                        href={getGroupLink(offer.topMatch.telegramMessageLink)}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <button
+                        onClick={() => openTelegramLink(getGroupLink(offer.topMatch!.telegramMessageLink!))}
                         className="text-foreground hover:underline"
                       >
                         {offer.topMatch.groupName}
-                      </a>
+                      </button>
                     </span>
                   ) : (
                     <span className="text-muted-foreground">знакомый из Халвы</span>
                   )}
                 </div>
                 {dmUrl && (
-                  <a
-                    href={dmUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    onClick={() => openTelegramLink(dmUrl)}
                     className="h-9 px-4 rounded-full bg-primary text-primary-foreground text-[13px] font-semibold flex items-center gap-1.5 active:scale-95 transition shrink-0"
                   >
                     <MessageCircle className="w-3.5 h-3.5" />
                     Написать
-                  </a>
+                  </button>
                 )}
               </div>
             </div>

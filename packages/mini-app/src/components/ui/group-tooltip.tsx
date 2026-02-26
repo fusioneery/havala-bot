@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn, openTelegramLink } from '@/lib/utils';
 import { useState } from 'react';
 import { BottomSheet } from './bottom-sheet';
 
@@ -51,14 +51,12 @@ export function GroupTooltip({ groups, children, className }: GroupTooltipProps)
                 <span className="text-[14px] text-foreground leading-snug line-clamp-2 min-w-0">
                   {group.name}
                 </span>
-                <a
-                  href={group.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  onClick={() => openTelegramLink(group.link)}
                   className="bg-lime text-[#1C1C1E] text-[12px] font-semibold px-3 py-1.5 rounded-full hover:opacity-80 transition shrink-0"
                 >
                   Открыть
-                </a>
+                </button>
               </li>
             ))}
           </ul>

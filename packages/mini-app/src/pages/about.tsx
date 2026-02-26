@@ -1,6 +1,7 @@
 import { GroupTooltip } from '@/components/ui/group-tooltip';
 import { useBackButton } from '@/hooks/use-back-button';
 import { useTrustedGroups } from '@/hooks/use-trusted-groups';
+import { openTelegramLink } from '@/lib/utils';
 import { useEffect } from 'react';
 
 const LS_KEY_VISITED_ABOUT = 'visited_about';
@@ -123,14 +124,12 @@ export default function AboutPage() {
           <h2 className="text-[17px] font-semibold mb-2">Контакты</h2>
           <p className="text-muted-foreground text-[14px] leading-relaxed">
             Вопросы, идеи, баги —{' '}
-            <a
-              href="https://t.me/fusion1337"
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={() => openTelegramLink('https://t.me/fusion1337')}
               className="text-foreground underline decoration-dotted underline-offset-[3px] decoration-foreground/50"
             >
               @fusion1337
-            </a>
+            </button>
           </p>
         </div>
       </main>

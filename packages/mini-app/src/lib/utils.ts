@@ -7,6 +7,17 @@ export function cn(...inputs: ClassValue[]) {
 
 const BOT_LINK = `${import.meta.env.VITE_BOT_USERNAME}`;
 
+/** Open a t.me link natively inside the Telegram Mini App, falls back to window.open. */
+export function openTelegramLink(url: string): void {
+  const tg = (window as unknown as { Telegram?: { WebApp?: { openTelegramLink?: (url: string) => void } } })
+    .Telegram?.WebApp;
+  if (tg?.openTelegramLink) {
+    tg.openTelegramLink(url);
+  } else {
+    window.open(url, '_blank');
+  }
+}
+
 /** Derives group/channel link from a Telegram message link (removes message id). */
 export function getGroupLink(messageLink: string): string {
   try {

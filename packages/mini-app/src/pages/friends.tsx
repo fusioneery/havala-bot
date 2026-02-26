@@ -1,4 +1,5 @@
 import { apiFetch } from '@/lib/api';
+import { openTelegramLink } from '@/lib/utils';
 import type { ContactListItem, TrustType, UserSearchResult } from '@hawala/shared';
 import { Search, UserPlus, Users, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -30,16 +31,9 @@ export default function FriendsPage() {
       if (!res.ok) throw new Error('Failed to get invite link');
       const { link } = await res.json();
 
-      // Try Telegram WebApp share first
-      const tg = (window as unknown as { Telegram?: { WebApp?: { openTelegramLink?: (url: string) => void } } }).Telegram?.WebApp;
       const shareText = 'Добавь меня в Халве! Это бот для быстрого обмена деньгами среди тех, кому ты доверяешь.';
       const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(shareText)}`;
-
-      if (tg?.openTelegramLink) {
-        tg.openTelegramLink(shareUrl);
-      } else {
-        window.open(shareUrl, '_blank');
-      }
+      openTelegramLink(shareUrl);
     } catch (err) {
       console.error('Failed to get invite link:', err);
     } finally {

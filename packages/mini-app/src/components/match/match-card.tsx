@@ -1,6 +1,6 @@
 import { Skeleton } from '@/components/ui/skeleton';
 import { apiFetch } from '@/lib/api';
-import { buildDmUrl, cn, getGroupLink } from '@/lib/utils';
+import { buildDmUrl, cn, getGroupLink, openTelegramLink } from '@/lib/utils';
 import type { MatchResult, TrustType } from '@hawala/shared';
 import { ExternalLink, MessageCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -95,14 +95,12 @@ export function MatchCard({ match, searchedAt }: MatchCardProps) {
           ) : isGroupMessageMatch && telegramMessageLink ? (
             <span className="text-foreground">
               знакомый из{' '}
-              <a
-                href={getGroupLink(telegramMessageLink)}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                onClick={() => openTelegramLink(getGroupLink(telegramMessageLink))}
                 className="text-foreground hover:underline"
               >
                 {groupName}
-              </a>
+              </button>
             </span>
           ) : (
             <span className="text-foreground">знакомый из Халвы</span>
@@ -164,24 +162,20 @@ export function MatchCard({ match, searchedAt }: MatchCardProps) {
 
       {/* Actions */}
       <div className="flex flex-col gap-3">
-        {dmUrl && <a
-          href={dmUrl}
-          target="_blank"
-          rel="noopener noreferrer"
+        {dmUrl && <button
+          onClick={() => openTelegramLink(dmUrl)}
           className="w-full bg-primary text-primary-foreground h-[52px] rounded-[20px] font-bold text-[16px] flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
         >
           <MessageCircle className="w-4.5 h-4.5" />
           Написать в личку
-        </a>}
-        {isGroupMessageMatch && telegramMessageLink && <a
-          href={telegramMessageLink}
-          target="_blank"
-          rel="noopener noreferrer"
+        </button>}
+        {isGroupMessageMatch && telegramMessageLink && <button
+          onClick={() => openTelegramLink(telegramMessageLink)}
           className="w-full bg-accent text-foreground h-[52px] rounded-[20px] font-semibold text-[16px] flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
         >
           <ExternalLink className="w-4.5 h-4.5" />
           Перейти к сообщению
-        </a>}
+        </button>}
       </div>
     </div>
   );

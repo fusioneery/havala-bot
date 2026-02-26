@@ -2,7 +2,7 @@ import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { GroupTooltip } from '@/components/ui/group-tooltip';
 import { useTrustedGroups } from '@/hooks/use-trusted-groups';
 import { apiFetch } from '@/lib/api';
-import { cn } from '@/lib/utils';
+import { cn, openTelegramLink } from '@/lib/utils';
 import type { ContactListItem, Visibility } from '@hawala/shared';
 import { ChevronRight, CircleHelp, Users } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -19,15 +19,9 @@ function useInviteFriend() {
       if (!res.ok) throw new Error('Failed to get invite link');
       const { link } = await res.json();
 
-      const tg = (window as unknown as { Telegram?: { WebApp?: { openTelegramLink?: (url: string) => void } } }).Telegram?.WebApp;
       const shareText = 'Добавь меня в Халве! Это бот для быстрого обмена деньгами среди тех, кому ты доверяешь.';
       const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(shareText)}`;
-
-      if (tg?.openTelegramLink) {
-        tg.openTelegramLink(shareUrl);
-      } else {
-        window.open(shareUrl, '_blank');
-      }
+      openTelegramLink(shareUrl);
     } catch (err) {
       console.error('Failed to get invite link:', err);
     } finally {
