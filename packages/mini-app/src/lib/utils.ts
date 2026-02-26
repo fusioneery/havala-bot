@@ -7,13 +7,13 @@ export function cn(...inputs: ClassValue[]) {
 
 const BOT_LINK = `${import.meta.env.VITE_BOT_USERNAME}`;
 
-/** Open a t.me link natively inside the Telegram Mini App, falls back to window.open. */
+/** Open a link from the Telegram Mini App without closing it. */
 export function openTelegramLink(url: string): void {
-  const tg = (window as unknown as { Telegram?: { WebApp?: { openTelegramLink?: (url: string) => void; version?: string; platform?: string } } })
+  const tg = (window as unknown as { Telegram?: { WebApp?: { openLink?: (url: string, options?: { try_instant_view?: boolean }) => void } } })
     .Telegram?.WebApp;
-  console.log('[openTelegramLink]', { url, hasTgMethod: !!tg?.openTelegramLink, version: tg?.version, platform: tg?.platform });
-  if (tg?.openTelegramLink) {
-    tg.openTelegramLink(url);
+  console.log('[openTelegramLink]', { url, hasTgOpenLink: !!tg?.openLink });
+  if (tg?.openLink) {
+    tg.openLink(url);
   } else {
     window.open(url, '_blank');
   }
