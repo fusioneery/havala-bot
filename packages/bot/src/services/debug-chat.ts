@@ -3,11 +3,13 @@ import { config } from '../config';
 type SendFn = (chatId: number, text: string, options?: { parse_mode?: 'HTML' }) => Promise<void>;
 
 let sendFn: SendFn | null = null;
+let resolvedChatId: number | null = null;
 
 export function initDebugChat(send: SendFn): void {
   sendFn = send;
-  if (config.debugChatId) {
-    console.log(`[debug-chat] Initialized, chatId=${config.debugChatId}`);
+  resolvedChatId = config.debugChatId;
+  if (resolvedChatId) {
+    console.log(`[debug-chat] Initialized, chatId=${resolvedChatId}`);
   }
 }
 
@@ -20,7 +22,7 @@ export async function debugLog(
   title: string,
   details?: Record<string, unknown>,
 ): Promise<void> {
-  if (!sendFn || !config.debugChatId) return;
+  if (!sendFn || !resolvedChatId) return;
 
   const lines = [`<b>${icon} ${escapeHtml(title)}</b>`];
 
@@ -37,8 +39,20 @@ export async function debugLog(
   const text = lines.join('\n');
 
   try {
-    await sendFn(config.debugChatId, text, { parse_mode: 'HTML' });
+    await sendFn(resolvedChatId, text, { parse_mode: 'HTML' });
   } catch (err) {
+    const newId = extractMigratedChatId(err);
+    if (newId) {
+      console.warn(`[debug-chat] Chat migrated to supergroup, new chatId=${newId} — update DEBUG_CHAT_ID`);
+      resolvedChatId = newId;
+      try {
+        await sendFn(resolvedChatId, text, { parse_mode: 'HTML' });
+        return;
+      } catch (retryErr) {
+        console.error('[debug-chat] Retry failed:', retryErr instanceof Error ? retryErr.message : retryErr);
+        return;
+      }
+    }
     console.error('[debug-chat] Failed to send:', err instanceof Error ? err.message : err);
   }
 }
@@ -59,6 +73,18 @@ export async function debugError(
     ...(stack ? { stack } : {}),
     ...context,
   });
+}
+
+function extractMigratedChatId(err: unknown): number | null {
+  if (
+    err &&
+    typeof err === 'object' &&
+    'parameters' in err &&
+    (err as { parameters?: { migrate_to_chat_id?: number } }).parameters?.migrate_to_chat_id
+  ) {
+    return (err as { parameters: { migrate_to_chat_id: number } }).parameters.migrate_to_chat_id;
+  }
+  return null;
 }
 
 function escapeHtml(text: string): string {
