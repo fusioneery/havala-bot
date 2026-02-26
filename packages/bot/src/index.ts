@@ -1,5 +1,6 @@
 import { bot } from './bot';
 import { config } from './config';
+import { db, schema } from './db';
 import { createServer } from './server';
 import { initAdminAlerts } from './services/admin-alerts';
 import { initBlacklistCache } from './services/blacklist';
@@ -7,18 +8,35 @@ import { startCleanupJob } from './services/cleanup';
 import { initDebugChat } from './services/debug-chat';
 import { startRateService } from './services/rates';
 
-async function logTrustedGroups(): Promise<void> {
+async function syncTrustedGroups(): Promise<void> {
   const ids = config.trustedGroupIds;
   if (ids.length === 0) {
     console.log('[TrustedGroups] No trusted groups configured (all groups allowed)');
     return;
   }
-  console.log(`[TrustedGroups] Fetching ${ids.length} group(s) from Telegram API...`);
+  console.log(`[TrustedGroups] Syncing ${ids.length} group(s) from Telegram API...`);
   for (const chatId of ids) {
     try {
       const chat = await bot.api.getChat(chatId);
-      const title = 'title' in chat ? chat.title : '(no title)';
-      console.log(`[TrustedGroups] id=${chatId} title="${title}"`);
+      const title = ('title' in chat ? chat.title : undefined) ?? String(chatId);
+      const link = ('username' in chat && chat.username)
+        ? `https://t.me/${chat.username}`
+        : null;
+
+      await db
+        .insert(schema.trustedGroups)
+        .values({
+          telegramChatId: chatId,
+          name: title,
+          link,
+          addedFromConfig: true,
+        })
+        .onConflictDoUpdate({
+          target: schema.trustedGroups.telegramChatId,
+          set: { name: title, link },
+        });
+
+      console.log(`[TrustedGroups] id=${chatId} title="${title}" link=${link ?? '(private)'}`);
     } catch (err) {
       console.warn(`[TrustedGroups] id=${chatId} failed to fetch:`, err);
     }
@@ -28,7 +46,7 @@ async function logTrustedGroups(): Promise<void> {
 async function main() {
   console.log('Starting Halwa Bot...');
 
-  await logTrustedGroups();
+  await syncTrustedGroups();
 
   await initBlacklistCache();
   startCleanupJob();
