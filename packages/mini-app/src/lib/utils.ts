@@ -6,6 +6,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 const BOT_LINK = `${import.meta.env.VITE_BOT_USERNAME}`;
+const SHOW_BOT_ATTRIBUTION = import.meta.env.VITE_SHOW_BOT_ATTRIBUTION !== 'false';
 
 /** Open a link from the Telegram Mini App without closing it. */
 export function openTelegramLink(url: string): void {
@@ -54,11 +55,11 @@ export function buildDmUrl(params: {
     ? `https://t.me/${BOT_LINK}?start=1${dealCode}`
     : BOT_LINK;
 
-  const messageText = [
-    introLine,
-    '',
-    `если что, нашёл тебя через Халву: ${botLink}`,
-  ].join('\n');
+  const messageLines = [introLine];
+  if (SHOW_BOT_ATTRIBUTION) {
+    messageLines.push('', `если что, нашёл тебя через Халву: ${botLink}`);
+  }
+  const messageText = messageLines.join('\n');
 
   const dmUrl = `https://t.me/${username}?text=${encodeURIComponent(messageText)}`;
   console.log('[buildDmUrl]', { username, matchSource, dealCode, urlLength: dmUrl.length, url: dmUrl });
