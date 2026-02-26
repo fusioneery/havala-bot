@@ -4,6 +4,7 @@ import { createServer } from './server';
 import { initAdminAlerts } from './services/admin-alerts';
 import { initBlacklistCache } from './services/blacklist';
 import { startCleanupJob } from './services/cleanup';
+import { initDebugChat } from './services/debug-chat';
 import { startRateService } from './services/rates';
 
 async function logTrustedGroups(): Promise<void> {
@@ -36,12 +37,22 @@ async function main() {
     await bot.api.sendMessage(chatId, text);
   });
 
+  initDebugChat(async (chatId, text, options) => {
+    await bot.api.sendMessage(chatId, text, options);
+  });
+
   await startRateService();
 
   // Start Fastify API server
   const server = await createServer();
   await server.listen({ port: config.port, host: '0.0.0.0' });
   console.log(`API server listening on port ${config.port}`);
+
+  // Register bot commands in Telegram menu
+  await bot.api.setMyCommands([
+    { command: 'start', description: 'Начать работу с ботом' },
+    { command: 'deleteaccount', description: 'Удалить аккаунт навсегда' },
+  ]);
 
   // Start grammY bot (long polling). Broad allowed_updates for user tracking.
   bot.start({

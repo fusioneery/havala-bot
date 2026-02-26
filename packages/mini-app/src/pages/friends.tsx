@@ -3,6 +3,7 @@ import type { ContactListItem, TrustType, UserSearchResult } from '@hawala/share
 import { Search, UserPlus, Users, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
+import { UserAvatar } from '@/components/ui/user-avatar';
 
 export default function FriendsPage() {
   const [contacts, setContacts] = useState<ContactListItem[]>([]);
@@ -168,13 +169,7 @@ export default function FriendsPage() {
                     key={user.id}
                     className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? 'border-t border-border' : ''}`}
                   >
-                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-[15px] font-semibold text-muted-foreground shrink-0 overflow-hidden">
-                      {user.avatarUrl ? (
-                        <img src={user.avatarUrl} className="w-full h-full object-cover" />
-                      ) : (
-                        user.firstName[0]
-                      )}
-                    </div>
+                    <UserAvatar telegramId={user.telegramId} firstName={user.firstName} />
                     <div className="flex-1 min-w-0">
                       <p className="text-[15px] font-medium truncate">{user.firstName}</p>
                       {user.username && (
@@ -221,13 +216,7 @@ export default function FriendsPage() {
                 key={contact.id}
                 className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? 'border-t border-border' : ''}`}
               >
-                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-[15px] font-semibold text-muted-foreground shrink-0 overflow-hidden">
-                  {contact.user.avatarUrl ? (
-                    <img src={contact.user.avatarUrl} className="w-full h-full object-cover" />
-                  ) : (
-                    contact.user.firstName[0]
-                  )}
-                </div>
+                <UserAvatar telegramId={contact.user.telegramId} firstName={contact.user.firstName} />
                 <div className="flex-1 min-w-0">
                   <p className="text-[15px] font-medium truncate">{contact.user.firstName}</p>
                   {contact.user.username && (
@@ -255,13 +244,13 @@ export default function FriendsPage() {
       {/* Remove contact confirmation */}
       <BottomSheet open={!!contactToRemove} onClose={() => !removing && setContactToRemove(null)}>
         <div className="flex flex-col items-center text-center gap-1 mb-5">
-          <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center text-[22px] font-semibold text-muted-foreground overflow-hidden mb-2">
-            {contactToRemove?.user.avatarUrl ? (
-              <img src={contactToRemove.user.avatarUrl} className="w-full h-full object-cover" />
-            ) : (
-              contactToRemove?.user.firstName[0]
-            )}
-          </div>
+          {contactToRemove && (
+            <UserAvatar
+              telegramId={contactToRemove.user.telegramId}
+              firstName={contactToRemove.user.firstName}
+              className="w-14 h-14 mb-2"
+            />
+          )}
           <h2 className="text-[17px] font-semibold">Удалить из контактов?</h2>
           <p className="text-muted-foreground text-[14px]">
             {contactToRemove?.user.firstName}

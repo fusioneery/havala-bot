@@ -74,7 +74,7 @@ export interface MyOfferMatchItem {
 }
 
 export interface MyOfferItem {
-  id: number;
+  id: string;  // prefixed "uo:{id}" or "o:{id}"
   fromCurrency: string;
   toCurrency: string;
   amount: number;

@@ -19,6 +19,7 @@ export const users = table(
     username: t.text(),
     firstName: t.text('first_name').notNull(),
     avatarUrl: t.text('avatar_url'),
+    notifyOnFriendAdd: t.int('notify_on_friend_add', { mode: 'boolean' }).notNull().default(true),
     createdAt: t.int('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
     updatedAt: t.int('updated_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
   },

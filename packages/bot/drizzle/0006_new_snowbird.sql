@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `notify_on_friend_add` integer DEFAULT true NOT NULL;

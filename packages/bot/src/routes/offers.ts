@@ -12,6 +12,7 @@ import {
   type SearchRequest,
   type SearchResponse,
 } from '@hawala/shared';
+import { debugLog } from '../services/debug-chat';
 import { getRate } from '../services/rates';
 import { checkRateLimit, recordOfferRequest } from '../services/rate-limit';
 
@@ -26,32 +27,42 @@ export async function offerRoutes(server: FastifyInstance) {
       .where(and(eq(schema.userOffers.userId, userId), eq(schema.userOffers.status, 'active')))
       .orderBy(desc(schema.userOffers.createdAt));
 
-    if (offers.length === 0) return reply.send([]);
+    // Query chat-parsed offers for this user
+    const chatOffers = await db
+      .select()
+      .from(schema.offers)
+      .where(and(eq(schema.offers.authorId, userId), eq(schema.offers.status, 'active')));
+
+    if (offers.length === 0 && chatOffers.length === 0) return reply.send([]);
 
     const offerIds = offers.map((o) => o.id);
 
-    // Count matches per offer
-    const matchCounts = await db
-      .select({ userOfferId: schema.matches.userOfferId, count: count() })
-      .from(schema.matches)
-      .where(inArray(schema.matches.userOfferId, offerIds))
-      .groupBy(schema.matches.userOfferId);
+    // Count matches per offer (skip if no userOffers)
+    const matchCounts = offerIds.length > 0
+      ? await db
+          .select({ userOfferId: schema.matches.userOfferId, count: count() })
+          .from(schema.matches)
+          .where(inArray(schema.matches.userOfferId, offerIds))
+          .groupBy(schema.matches.userOfferId)
+      : [];
     const countMap = new Map(matchCounts.map((r) => [r.userOfferId, r.count]));
 
     // Fetch all matches per offer (with author + group)
-    const matchRows = await db
-      .select({
-        matchId: schema.matches.id,
-        userOfferId: schema.matches.userOfferId,
-        offer: schema.offers,
-        author: schema.users,
-        group: schema.trustedGroups,
-      })
-      .from(schema.matches)
-      .innerJoin(schema.offers, eq(schema.matches.matchedOfferId, schema.offers.id))
-      .innerJoin(schema.users, eq(schema.offers.authorId, schema.users.id))
-      .innerJoin(schema.trustedGroups, eq(schema.offers.groupId, schema.trustedGroups.id))
-      .where(inArray(schema.matches.userOfferId, offerIds));
+    const matchRows = offerIds.length > 0
+      ? await db
+          .select({
+            matchId: schema.matches.id,
+            userOfferId: schema.matches.userOfferId,
+            offer: schema.offers,
+            author: schema.users,
+            group: schema.trustedGroups,
+          })
+          .from(schema.matches)
+          .innerJoin(schema.offers, eq(schema.matches.matchedOfferId, schema.offers.id))
+          .innerJoin(schema.users, eq(schema.offers.authorId, schema.users.id))
+          .innerJoin(schema.trustedGroups, eq(schema.offers.groupId, schema.trustedGroups.id))
+          .where(inArray(schema.matches.userOfferId, offerIds))
+      : [];
 
     // Batch-fetch trust relations for all unique authors
     const uniqueAuthorIds = [...new Set(matchRows.map((r) => r.author.id))];
@@ -102,14 +113,14 @@ export async function offerRoutes(server: FastifyInstance) {
       });
     }
 
-    const result = offers.map((o) => {
+    const userResult = offers.map((o) => {
       const pm = JSON.parse(o.paymentMethods) as {
         give?: { currency: string; methods: string[] }[];
         take?: { currency: string; methods: string[] }[];
       };
       const allMatches = matchesMap.get(o.id) ?? [];
       return {
-        id: o.id,
+        id: `uo:${o.id}`,
         fromCurrency: o.fromCurrency,
         toCurrency: o.toCurrency,
         amount: o.amount,
@@ -122,24 +133,76 @@ export async function offerRoutes(server: FastifyInstance) {
       };
     });
 
-    return reply.send(result);
+    const chatResult = chatOffers.map((o) => {
+      const pm = JSON.parse(o.paymentMethods) as {
+        give?: { currency: string; methods: string[] }[];
+        take?: { currency: string; methods: string[] }[];
+      };
+      return {
+        id: `o:${o.id}`,
+        fromCurrency: o.fromCurrency,
+        toCurrency: o.toCurrency,
+        amount: o.amount,
+        status: o.status as 'active',
+        matchCount: 0,
+        createdAt: o.createdAt,
+        paymentMethods: { give: pm.give ?? [], take: pm.take ?? [] },
+        topMatch: null,
+        allMatches: [],
+      };
+    });
+
+    const merged = [...userResult, ...chatResult].sort(
+      (a, b) => new Date(b.createdAt as unknown as string).getTime() - new Date(a.createdAt as unknown as string).getTime(),
+    );
+
+    return reply.send(merged);
   });
 
   server.delete<{ Params: { id: string } }>('/:id', async (request, reply) => {
     const userId = await resolveUserId(request);
     if (!userId) return reply.status(401).send({ error: 'Unauthorized' });
-    const offerId = Number(request.params.id);
 
-    const [offer] = await db
-      .select()
-      .from(schema.userOffers)
-      .where(and(eq(schema.userOffers.id, offerId), eq(schema.userOffers.userId, userId)));
+    const raw = request.params.id;
+    const isChat = raw.startsWith('o:');
+    const numericId = Number(raw.replace(/^(uo:|o:)/, ''));
+    if (Number.isNaN(numericId)) return reply.status(400).send({ error: 'Invalid id' });
 
-    if (!offer) return reply.status(404).send({ error: 'Not found' });
+    if (isChat) {
+      // Chat-parsed offer: verify ownership, set cancelled
+      const [offer] = await db
+        .select()
+        .from(schema.offers)
+        .where(and(eq(schema.offers.id, numericId), eq(schema.offers.authorId, userId)));
+      if (!offer) return reply.status(404).send({ error: 'Not found' });
 
-    // Delete related matches first, then the offer
-    await db.delete(schema.matches).where(eq(schema.matches.userOfferId, offerId));
-    await db.delete(schema.userOffers).where(eq(schema.userOffers.id, offerId));
+      await db
+        .update(schema.offers)
+        .set({ status: 'cancelled', updatedAt: new Date() })
+        .where(eq(schema.offers.id, numericId));
+
+      void debugLog('🗑️', 'Заявка из чата отменена (API)', {
+        offerId: numericId,
+        userId,
+        direction: `${offer.fromCurrency} → ${offer.toCurrency}`,
+      });
+    } else {
+      // User offer: existing logic (delete matches + delete offer)
+      const [offer] = await db
+        .select()
+        .from(schema.userOffers)
+        .where(and(eq(schema.userOffers.id, numericId), eq(schema.userOffers.userId, userId)));
+      if (!offer) return reply.status(404).send({ error: 'Not found' });
+
+      await db.delete(schema.matches).where(eq(schema.matches.userOfferId, numericId));
+      await db.delete(schema.userOffers).where(eq(schema.userOffers.id, numericId));
+
+      void debugLog('🗑️', 'Заявка удалена (API)', {
+        userOfferId: numericId,
+        userId,
+        direction: `${offer.fromCurrency} → ${offer.toCurrency}`,
+      });
+    }
 
     return reply.send({ ok: true });
   });
@@ -335,6 +398,15 @@ export async function offerRoutes(server: FastifyInstance) {
       giveAmount: formatNum(amount),
       giveCurrency: toCurrency,
       givePaymentMethod: getPaymentMethodLabel(toCurrency),
+    });
+
+    void debugLog('📝', 'Заявка через API', {
+      userOfferId: userOffer.id,
+      userId,
+      direction: `${fromCurrency} → ${toCurrency}`,
+      amount,
+      visibility,
+      matchesFound: finalMatches.length,
     });
 
     const response: SearchResponse = {

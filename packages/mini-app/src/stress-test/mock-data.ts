@@ -78,7 +78,7 @@ const makeLongGroupName = () => STRESS_GROUPS[0].name;
 
 export const STRESS_OFFERS: MyOfferItem[] = [
   {
-    id: 1001,
+    id: 'uo:1001',
     fromCurrency: 'RUB',
     toCurrency: 'USDT',
     amount: 999_999_999,
@@ -100,7 +100,7 @@ export const STRESS_OFFERS: MyOfferItem[] = [
     ],
   },
   {
-    id: 1002,
+    id: 'uo:1002',
     fromCurrency: 'USDT',
     toCurrency: 'RUB',
     amount: 1_234_567.890123,
@@ -124,7 +124,7 @@ export const STRESS_OFFERS: MyOfferItem[] = [
     ],
   },
   {
-    id: 1003,
+    id: 'uo:1003',
     fromCurrency: 'EUR',
     toCurrency: 'GEL',
     amount: 88_888_888.88,
@@ -139,7 +139,7 @@ export const STRESS_OFFERS: MyOfferItem[] = [
     allMatches: [],
   },
   {
-    id: 1004,
+    id: 'uo:1004',
     fromCurrency: 'USD',
     toCurrency: 'RUB',
     amount: 10_000_000,
@@ -160,7 +160,7 @@ export const STRESS_OFFERS: MyOfferItem[] = [
     ],
   },
   {
-    id: 1005,
+    id: 'uo:1005',
     fromCurrency: 'GBP',
     toCurrency: 'USDT',
     amount: 555_555.123456,
@@ -183,7 +183,7 @@ export const STRESS_OFFERS: MyOfferItem[] = [
     ],
   },
   {
-    id: 1006,
+    id: 'uo:1006',
     fromCurrency: 'RUB',
     toCurrency: 'AED',
     amount: 777_777_777,

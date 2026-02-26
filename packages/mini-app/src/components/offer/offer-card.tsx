@@ -27,7 +27,7 @@ const PILL_LABELS: Record<PaymentMethodGroup, string> = {
 
 interface OfferCardProps {
   offer: MyOfferItem;
-  onCancel: (id: number) => void;
+  onCancel: (id: string) => void;
 }
 
 function CurrencyIcon({ code, size }: { code: string; size: number }) {

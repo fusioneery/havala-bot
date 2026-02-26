@@ -76,7 +76,7 @@ function HomePage() {
       .finally(() => setOffersLoading(false));
   }, []);
 
-  const [cancelId, setCancelId] = useState<number | null>(null);
+  const [cancelId, setCancelId] = useState<string | null>(null);
 
   const confirmCancel = useCallback(async () => {
     if (cancelId === null) return;

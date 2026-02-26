@@ -3,6 +3,7 @@ import { hasPaymentMethodOverlap, type GroupMessage, type ParsedOffer, type Pars
 import { and, eq, ne } from 'drizzle-orm';
 import { config } from '../config';
 import { db, schema } from '../db';
+import { debugError, debugLog } from './debug-chat';
 import { getRate } from './rates';
 import { upsertGroupMember, upsertUser } from './user-event-tracker';
 
@@ -290,6 +291,7 @@ export class GroupMessagePipeline {
         elapsedMs,
         error instanceof Error ? error.message : String(error),
       );
+      void debugError('LLM parse failed', error, { chatId, elapsedMs, batchSize });
       return;
     }
 
@@ -302,6 +304,19 @@ export class GroupMessagePipeline {
       parsedOffers.length,
       exchangeOffersCount,
     );
+
+    void debugLog('🤖', 'AI вердикт', {
+      chatId,
+      batchSize,
+      elapsedMs: llmElapsedMs,
+      parsed: parsedOffers.length,
+      exchangeOffers: exchangeOffersCount,
+      verdicts: parsedOffers.map((o, i) => ({
+        msg: batch[i]?.text.slice(0, 60),
+        isOffer: o.isExchangeOffer,
+        ...(o.isExchangeOffer ? { amount: o.amount, from: o.givePaymentMethods[0]?.currency, to: o.takePaymentMethods[0]?.currency } : {}),
+      })),
+    });
 
     let persistedCount = 0;
     let notifiedCount = 0;
@@ -383,11 +398,22 @@ export class GroupMessagePipeline {
         authorId: schema.offers.authorId,
       });
 
+    void debugLog('✅', 'Заявка из чата', {
+      offerId: insertedOffer.id,
+      author: source.authorUsername ?? String(source.authorTelegramId),
+      direction: `${fromCurrency} → ${toCurrency}`,
+      amount: parsedOffer.amount,
+      partial: parsedOffer.partial,
+      chatId: source.chatId,
+      msgId: source.messageId,
+    });
+
     if (config.reactToParsedOffers && this.options.setMessageReaction) {
       try {
         await this.options.setMessageReaction(source.chatId, source.messageId, '👍');
       } catch (err) {
         console.error('[Pipeline] Failed to set reaction chatId=%d msgId=%d:', source.chatId, source.messageId, err);
+        void debugError('Failed to set reaction', err, { chatId: source.chatId, msgId: source.messageId });
       }
     }
 
@@ -459,6 +485,7 @@ export class GroupMessagePipeline {
         existingOffer.id,
         error instanceof Error ? error.message : String(error),
       );
+      void debugError('LLM edit analysis failed', error, { offerId: existingOffer.id, chatId, messageId });
       return;
     }
 
@@ -467,6 +494,14 @@ export class GroupMessagePipeline {
       existingOffer.id,
       editAction.action,
     );
+
+    void debugLog('✏️', 'Сообщение отредактировано', {
+      offerId: existingOffer.id,
+      chatId,
+      messageId,
+      action: editAction.action,
+      ...(editAction.action === 'update' && editAction.updates ? { updates: editAction.updates } : {}),
+    });
 
     if (editAction.action === 'delete') {
       await db
@@ -611,10 +646,6 @@ export class GroupMessagePipeline {
         ),
       );
 
-    // #region agent log
-    fetch('http://127.0.0.1:7289/ingest/f626f9d7-44a3-4216-b53f-1613f3a7cbb1',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'2bac80'},body:JSON.stringify({sessionId:'2bac80',location:'group-message-pipeline.ts:364',message:'Matching candidates found',data:{candidateCount:candidates.length,candidates:candidates.map(c=>({userOfferId:c.userOfferId,userId:c.userId,userTelegramId:c.userTelegramId,visibility:c.visibility})),offer:{id:offer.id,fromCurrency:offer.fromCurrency,toCurrency:offer.toCurrency,amount:offer.amount,authorId:offer.authorId}},hypothesisId:'A,B,C',timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
-
     let notified = 0;
     for (const candidate of candidates) {
       // Convert offer amount to candidate's fromCurrency for comparison
@@ -684,9 +715,15 @@ export class GroupMessagePipeline {
 
       const text = this.buildMatchNotificationText(offer);
       const keyboard = this.buildMatchResultKeyboard(insertedMatch.id);
-      // #region agent log
-      fetch('http://127.0.0.1:7289/ingest/f626f9d7-44a3-4216-b53f-1613f3a7cbb1',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'2bac80'},body:JSON.stringify({sessionId:'2bac80',location:'group-message-pipeline.ts:415',message:'Sending DM notification',data:{userTelegramId:candidate.userTelegramId,userId:candidate.userId,userOfferId:candidate.userOfferId,offerId:offer.id},hypothesisId:'A,B,C,D',timestamp:Date.now()})}).catch(()=>{});
-      // #endregion
+
+      void debugLog('🎯', 'Мэтч найден', {
+        matchId: insertedMatch.id,
+        offerId: offer.id,
+        userOfferId: candidate.userOfferId,
+        direction: `${offer.fromCurrency} → ${offer.toCurrency}`,
+        notifyTelegramId: candidate.userTelegramId,
+      });
+
       await this.safeSendDirectMessage(candidate.userTelegramId, text, {
         parse_mode: 'Markdown',
         reply_markup: keyboard,
@@ -791,14 +828,9 @@ export class GroupMessagePipeline {
   ): Promise<void> {
     try {
       await this.options.sendDirectMessage(telegramId, text, options);
-      // #region agent log
-      fetch('http://127.0.0.1:7289/ingest/f626f9d7-44a3-4216-b53f-1613f3a7cbb1',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'2bac80'},body:JSON.stringify({sessionId:'2bac80',location:'group-message-pipeline.ts:483',message:'DM sent successfully',data:{telegramId},hypothesisId:'D',timestamp:Date.now()})}).catch(()=>{});
-      // #endregion
     } catch (error) {
-      // #region agent log
-      fetch('http://127.0.0.1:7289/ingest/f626f9d7-44a3-4216-b53f-1613f3a7cbb1',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'2bac80'},body:JSON.stringify({sessionId:'2bac80',location:'group-message-pipeline.ts:488',message:'DM send failed',data:{telegramId,error:error instanceof Error?error.message:String(error)},hypothesisId:'A,B,C,D',timestamp:Date.now()})}).catch(()=>{});
-      // #endregion
       console.error(`Failed to send DM notification to user ${telegramId}`, error);
+      void debugError('Failed to send DM', error, { telegramId });
     }
   }
 }

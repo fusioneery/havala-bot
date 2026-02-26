@@ -71,4 +71,7 @@ export const config = {
 
   // Feature flags
   reactToParsedOffers: process.env.REACT_TO_PARSED_OFFERS === 'true' || process.env.REACT_TO_PARSED_OFFERS === '1',
+
+  // Debug chat — optional Telegram chat ID for business logic logs
+  debugChatId: process.env.DEBUG_CHAT_ID ? Number(process.env.DEBUG_CHAT_ID) : null,
 } as const;

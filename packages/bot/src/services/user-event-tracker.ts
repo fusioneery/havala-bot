@@ -2,10 +2,11 @@ import type { Context } from 'grammy';
 import { and, eq } from 'drizzle-orm';
 import { config } from '../config';
 import { db, schema } from '../db';
+import { isBlacklisted } from './blacklist';
 
 type TelegramUser = { id: number; username?: string; first_name: string; is_bot?: boolean };
 
-async function getTelegramAvatarUrl(telegramUserId: number): Promise<string | null> {
+export async function getTelegramAvatarUrl(telegramUserId: number): Promise<string | null> {
   try {
     const photosRes = await fetch(
       `https://api.telegram.org/bot${config.botToken}/getUserProfilePhotos?user_id=${telegramUserId}&limit=1`,
@@ -81,6 +82,7 @@ function isLeaveEvent(ctx: Context): boolean {
 export async function trackUserFromContext(ctx: Context): Promise<void> {
   const user = extractUser(ctx);
   if (!user || user.is_bot) return;
+  if (isBlacklisted(user.id)) return;
 
   const chat = extractChat(ctx);
   const isGroup = chat && isGroupChat(chat);

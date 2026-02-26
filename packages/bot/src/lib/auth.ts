@@ -9,6 +9,7 @@ import {
 } from '@telegram-apps/init-data-node';
 import { db, schema } from '../db';
 import { config } from '../config';
+import { getTelegramAvatarUrl } from '../services/user-event-tracker';
 
 export interface AuthResult {
   userId: number;
@@ -65,17 +66,28 @@ export async function authenticateRequest(
   }
 
   const parsed = parse(initData);
-  const telegramUser = parsed.user;
+  // parse() returns snake_case keys at runtime despite CamelCase TS types
+  const telegramUser = parsed.user as Record<string, unknown> | undefined;
 
   if (!telegramUser || typeof telegramUser.id !== 'number') {
     return { ok: false, error: 'MISSING_USER_DATA' };
   }
 
+  const firstName = (telegramUser.first_name as string | undefined)
+    || (telegramUser.firstName as string | undefined)
+    || telegramUser.id.toString();
+  const username = (telegramUser.username as string | undefined) ?? null;
+  // photo_url is only in init data when launched from attachment menu;
+  // fall back to Bot API getUserProfilePhotos
+  const photoUrl = (telegramUser.photo_url as string | undefined)
+    || (telegramUser.photoUrl as string | undefined)
+    || await getTelegramAvatarUrl(telegramUser.id as number);
+
   const result = await findOrCreateUser({
-    telegramId: telegramUser.id,
-    username: (telegramUser.username as string | undefined) ?? null,
-    firstName: (telegramUser.firstName as string) ?? telegramUser.id.toString(),
-    photoUrl: (telegramUser.photoUrl as string | undefined) ?? null,
+    telegramId: telegramUser.id as number,
+    username,
+    firstName,
+    photoUrl,
   });
 
   return { ok: true, data: result };
@@ -99,20 +111,24 @@ interface TelegramUserData {
 
 async function findOrCreateUser(userData: TelegramUserData): Promise<AuthResult> {
   const [existing] = await db
-    .select({ id: schema.users.id })
+    .select({ id: schema.users.id, avatarUrl: schema.users.avatarUrl })
     .from(schema.users)
     .where(eq(schema.users.telegramId, userData.telegramId))
     .limit(1);
 
   if (existing) {
+    const set: Record<string, unknown> = {
+      username: userData.username,
+      firstName: userData.firstName,
+      updatedAt: new Date(),
+    };
+    // Only overwrite avatar if we have a new one
+    if (userData.photoUrl) {
+      set.avatarUrl = userData.photoUrl;
+    }
     await db
       .update(schema.users)
-      .set({
-        username: userData.username,
-        firstName: userData.firstName,
-        avatarUrl: userData.photoUrl,
-        updatedAt: new Date(),
-      })
+      .set(set)
       .where(eq(schema.users.telegramId, userData.telegramId));
 
     return { userId: existing.id, telegramId: userData.telegramId, isNewUser: false };

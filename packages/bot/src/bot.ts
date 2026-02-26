@@ -1,10 +1,12 @@
-import { eq, inArray } from 'drizzle-orm';
+import { eq, inArray, or } from 'drizzle-orm';
 import { Bot, InlineKeyboard } from 'grammy';
 import { config } from './config';
 import { db, schema } from './db';
+import { addToBlacklist } from './services/blacklist';
 import { handleChatMemberUpdate } from './services/chat-member-handler';
 import { GroupMessagePipeline } from './services/group-message-pipeline';
 import { getRate } from './services/rates';
+import { debugError, debugLog } from './services/debug-chat';
 import { trackUserFromContext } from './services/user-event-tracker';
 
 export const bot = new Bot(config.botToken);
@@ -179,11 +181,18 @@ bot.on('message:text', async (ctx, next) => {
       .set({ status: 'cancelled', updatedAt: new Date() })
       .where(eq(schema.userOffers.id, match.userOfferId));
 
+    void debugLog('⚠️', 'Жалоба на обмен', {
+      matchId: pendingMatchId,
+      userId: from.id,
+      reason: text.slice(0, 200),
+    });
+
     await ctx.reply(
       'Спасибо за обратную связь! Мы записали информацию об ошибке. Ваша заявка отменена.',
     );
   } catch (error) {
     console.error('Error handling error report:', error);
+    void debugError('Error report handler failed', error, { matchId: pendingMatchId });
     await ctx.reply('Произошла ошибка при сохранении отзыва.');
   }
 });
@@ -270,6 +279,7 @@ bot.command('start', async (ctx) => {
             id: schema.users.id,
             firstName: schema.users.firstName,
             telegramId: schema.users.telegramId,
+            notifyOnFriendAdd: schema.users.notifyOnFriendAdd,
           })
           .from(schema.users)
           .where(eq(schema.users.id, refCodeRow.userId))
@@ -291,13 +301,21 @@ bot.command('start', async (ctx) => {
           referrerUser = referrer;
 
           // Notify referrer that their friend joined
-          try {
-            await bot.api.sendMessage(
-              referrer.telegramId,
-              `🎉 ${user.first_name} присоединился по вашей ссылке! Вы теперь друзья.`,
-            );
-          } catch {
-            // Referrer may have blocked the bot
+          if (referrer.notifyOnFriendAdd) {
+            try {
+              const keyboard = new InlineKeyboard()
+                .webApp('Создать заявку', config.miniAppUrl)
+                .row()
+                .text('🔔 Не уведомлять о новых друзьях', 'toggle_friend_notify');
+
+              await bot.api.sendMessage(
+                referrer.telegramId,
+                `${user.first_name} добавил вас в друзья в Халве, теперь вы можете видеть заявки на обмен друг друга.`,
+                { reply_markup: keyboard },
+              );
+            } catch {
+              // Referrer may have blocked the bot
+            }
           }
         }
       }
@@ -527,6 +545,12 @@ bot.callbackQuery(/^match_success:/, async (ctx) => {
       .set({ status: 'matched', updatedAt: new Date() })
       .where(eq(schema.offers.id, match.matchedOfferId));
 
+    void debugLog('✅', 'Обмен успешен', {
+      matchId,
+      from: `${groupOffer.fromCurrency} → ${groupOffer.toCurrency}`,
+      amount: groupOffer.amount,
+    });
+
     await ctx.answerCallbackQuery({ text: 'Отлично! Обмен записан как успешный.' });
     await ctx.editMessageText(
       ctx.callbackQuery.message?.text + '\n\n✅ *Обмен завершён успешно!*',
@@ -534,6 +558,7 @@ bot.callbackQuery(/^match_success:/, async (ctx) => {
     );
   } catch (error) {
     console.error('Error handling match_success:', error);
+    void debugError('match_success handler failed', error, { matchId });
     await ctx.answerCallbackQuery({ text: 'Произошла ошибка' });
   }
 });
@@ -556,7 +581,181 @@ bot.callbackQuery(/^match_error:/, async (ctx) => {
   );
 });
 
+// /deleteaccount — permanently delete all data and self-ban
+bot.command('deleteaccount', async (ctx) => {
+  const user = ctx.from;
+  if (!user || ctx.chat?.type !== 'private') return;
+
+  const keyboard = new InlineKeyboard()
+    .text('Да, удалить навсегда', 'confirm_delete_account')
+    .row()
+    .text('Отмена', 'cancel_delete_account');
+
+  await ctx.reply(
+    '⚠️ Вы уверены?\n\n'
+    + 'Эта команда безвозвратно удалит ВСЕ ваши данные:\n'
+    + '• Контакты и связи доверия\n'
+    + '• Все заявки и мэтчи\n'
+    + '• Историю обменов\n'
+    + '• Реферальный код\n\n'
+    + 'После удаления ваш аккаунт будет заблокирован навсегда. Это действие нельзя отменить.',
+    { reply_markup: keyboard },
+  );
+});
+
+bot.callbackQuery('confirm_delete_account', async (ctx) => {
+  const user = ctx.from;
+  if (!user) return;
+
+  try {
+    await ctx.answerCallbackQuery();
+    await ctx.editMessageText('Удаление данных...');
+
+    const [dbUser] = await db
+      .select({ id: schema.users.id })
+      .from(schema.users)
+      .where(eq(schema.users.telegramId, user.id))
+      .limit(1);
+
+    if (dbUser) {
+      await deleteAllUserData(dbUser.id);
+    }
+
+    await addToBlacklist(user.id, 'self-delete via /deleteaccount');
+
+    void debugLog('🚫', 'Аккаунт удалён', {
+      telegramId: user.id,
+      username: user.username,
+    });
+
+    await ctx.editMessageText(
+      'Ваш аккаунт удалён и заблокирован навсегда. Прощайте.',
+    );
+  } catch (error) {
+    console.error('[deleteaccount] Error:', error);
+    void debugError('deleteaccount failed', error, { telegramId: user.id });
+    await ctx.editMessageText('Произошла ошибка при удалении. Обратитесь к админу.');
+  }
+});
+
+bot.callbackQuery('cancel_delete_account', async (ctx) => {
+  await ctx.answerCallbackQuery({ text: 'Отменено' });
+  await ctx.editMessageText('Удаление отменено.');
+});
+
+bot.callbackQuery('toggle_friend_notify', async (ctx) => {
+  const user = ctx.from;
+  if (!user) return;
+
+  try {
+    const [dbUser] = await db
+      .select({ id: schema.users.id, notifyOnFriendAdd: schema.users.notifyOnFriendAdd })
+      .from(schema.users)
+      .where(eq(schema.users.telegramId, user.id))
+      .limit(1);
+
+    if (!dbUser) {
+      await ctx.answerCallbackQuery({ text: 'Пользователь не найден' });
+      return;
+    }
+
+    const newValue = !dbUser.notifyOnFriendAdd;
+    await db
+      .update(schema.users)
+      .set({ notifyOnFriendAdd: newValue, updatedAt: new Date() })
+      .where(eq(schema.users.id, dbUser.id));
+
+    const originalText = ctx.callbackQuery.message?.text ?? '';
+    const buttonLabel = newValue
+      ? '🔔 Не уведомлять о новых друзьях'
+      : '🔕 Уведомлять о новых друзьях';
+
+    const keyboard = new InlineKeyboard()
+      .webApp('Создать заявку', config.miniAppUrl)
+      .row()
+      .text(buttonLabel, 'toggle_friend_notify');
+
+    await ctx.editMessageReplyMarkup({ reply_markup: keyboard });
+    await ctx.answerCallbackQuery({
+      text: newValue ? 'Уведомления включены' : 'Уведомления выключены',
+    });
+  } catch (error) {
+    console.error('[toggle_friend_notify] Error:', error);
+    await ctx.answerCallbackQuery({ text: 'Ошибка' });
+  }
+});
+
+async function deleteAllUserData(userId: number): Promise<void> {
+  // Collect IDs needed for cascading deletes
+  const userOfferIds = (
+    await db.select({ id: schema.userOffers.id }).from(schema.userOffers)
+      .where(eq(schema.userOffers.userId, userId))
+  ).map((r) => r.id);
+
+  const offerIds = (
+    await db.select({ id: schema.offers.id }).from(schema.offers)
+      .where(eq(schema.offers.authorId, userId))
+  ).map((r) => r.id);
+
+  // Delete from leaf tables first (FK order)
+  if (userOfferIds.length > 0 || offerIds.length > 0) {
+    // exchange_history references matches, user_offers, offers, users
+    await db.delete(schema.exchangeHistory).where(
+      or(
+        eq(schema.exchangeHistory.initiatorUserId, userId),
+        eq(schema.exchangeHistory.counterpartyUserId, userId),
+      ),
+    );
+
+    // matches reference user_offers and offers
+    if (userOfferIds.length > 0) {
+      await db.delete(schema.matches).where(
+        inArray(schema.matches.userOfferId, userOfferIds),
+      );
+    }
+    if (offerIds.length > 0) {
+      await db.delete(schema.matches).where(
+        inArray(schema.matches.matchedOfferId, offerIds),
+      );
+    }
+  }
+
+  // error_offers reference offers and users
+  if (offerIds.length > 0) {
+    await db.delete(schema.errorOffers).where(
+      inArray(schema.errorOffers.offerId, offerIds),
+    );
+  }
+  await db.delete(schema.errorOffers).where(eq(schema.errorOffers.reportedBy, userId));
+
+  // Now safe to delete offers and user_offers
+  if (userOfferIds.length > 0) {
+    await db.delete(schema.userOffers).where(eq(schema.userOffers.userId, userId));
+  }
+  if (offerIds.length > 0) {
+    await db.delete(schema.offers).where(eq(schema.offers.authorId, userId));
+  }
+
+  await db.delete(schema.offerRequests).where(eq(schema.offerRequests.userId, userId));
+  await db.delete(schema.referralCodes).where(eq(schema.referralCodes.userId, userId));
+  await db.delete(schema.groupMembers).where(eq(schema.groupMembers.userId, userId));
+
+  // Trust relations — both directions
+  await db.delete(schema.trustRelations).where(
+    or(
+      eq(schema.trustRelations.userId, userId),
+      eq(schema.trustRelations.targetUserId, userId),
+    ),
+  );
+
+  // Finally delete the user
+  await db.delete(schema.users).where(eq(schema.users.id, userId));
+}
+
 // Catch-all error handler
 bot.catch((err) => {
   console.error('Bot error:', err);
+  void debugError('Bot error (catch-all)', err.error, {
+    update: err.ctx?.update?.update_id,
+  });
 });

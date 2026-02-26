@@ -6,8 +6,10 @@ import { groupRoutes } from './routes/groups';
 import { feedRoutes } from './routes/feed';
 import { offerRoutes } from './routes/offers';
 import { rateRoutes } from './routes/rates';
+import { avatarRoutes } from './routes/avatar';
 import { isBlacklisted } from './services/blacklist';
 import { authenticateRequest } from './lib/auth';
+import { debugError } from './services/debug-chat';
 
 export async function createServer() {
   const server = Fastify({
@@ -39,6 +41,9 @@ export async function createServer() {
       `Unhandled error on ${request.method} ${request.url}`,
     );
     const statusCode = error.statusCode ?? 500;
+    void debugError(`HTTP ${request.method} ${request.url}`, error, {
+      statusCode,
+    });
     reply.status(statusCode).send({
       error: error.name || 'InternalServerError',
       message: error.message,
@@ -74,6 +79,7 @@ export async function createServer() {
   server.register(rateRoutes, { prefix: '/api/rates' });
   server.register(contactRoutes, { prefix: '/api/contacts' });
   server.register(groupRoutes, { prefix: '/api/groups' });
+  server.register(avatarRoutes, { prefix: '/api/avatar' });
 
   // In production, serve mini-app static build
   if (config.isProd) {
