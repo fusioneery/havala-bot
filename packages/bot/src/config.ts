@@ -57,7 +57,7 @@ export const config = {
   port: Number(process.env.PORT) || 3000,
   isProd: process.env.NODE_ENV === 'production',
   dev: process.env.DEV === 'true' || process.env.DEV === '1',
-  miniAppUrl: process.env.MINI_APP_URL!,
+  miniAppUrl: process.env.MINI_APP_URL || 'https://t.me/halwa_app_bot/miniapp',
   writeOfferText: process.env.WRITE_OFFER_TEXT || '#ищу {TAKE_AMOUNT} {TAKE_CURRENCY} {TAKE_PAYMENT_METHOD}\n#предлагаю {GIVE_AMOUNT} {GIVE_CURRENCY} {GIVE_PAYMENT_METHOD}',
   openExchangeRatesApiKey: process.env.OPENEXCHANGERATES_API_KEY || '',
   botUsername: process.env.BOT_USERNAME || 'HawalaExchangeBot',

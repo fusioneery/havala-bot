@@ -4,9 +4,9 @@ import { config } from './config';
 import { db, schema } from './db';
 import { addToBlacklist } from './services/blacklist';
 import { handleChatMemberUpdate } from './services/chat-member-handler';
+import { debugError, debugLog } from './services/debug-chat';
 import { GroupMessagePipeline } from './services/group-message-pipeline';
 import { getRate } from './services/rates';
-import { debugError, debugLog } from './services/debug-chat';
 import { trackUserFromContext } from './services/user-event-tracker';
 
 export const bot = new Bot(config.botToken);
@@ -14,7 +14,8 @@ export const bot = new Bot(config.botToken);
 const pendingErrorReports = new Map<number, number>();
 
 const GROUP_LABEL_CACHE_TTL_MS = 10 * 60 * 1000;
-let cachedGroupLabels: string[] = [];
+type GroupLabel = { label: string; username?: string };
+let cachedGroupLabels: GroupLabel[] = [];
 let groupLabelCacheValidUntil = 0;
 
 const groupMessagePipeline = new GroupMessagePipeline({
@@ -26,7 +27,7 @@ const groupMessagePipeline = new GroupMessagePipeline({
   },
 });
 
-async function getTrustedGroupLabels(): Promise<string[]> {
+async function getTrustedGroupLabels(): Promise<GroupLabel[]> {
   const now = Date.now();
   if (groupLabelCacheValidUntil > now) return cachedGroupLabels;
 
@@ -37,15 +38,15 @@ async function getTrustedGroupLabels(): Promise<string[]> {
     return cachedGroupLabels;
   }
 
-  const labels: string[] = [];
+  const labels: GroupLabel[] = [];
   await Promise.all(
     ids.map(async (chatId) => {
       try {
         const chat = await bot.api.getChat(chatId);
-        if ('username' in chat && chat.username) {
-          labels.push(`@${chat.username}`);
-        } else if ('title' in chat && chat.title) {
-          labels.push(chat.title);
+        const title = 'title' in chat && chat.title ? chat.title : undefined;
+        const username = 'username' in chat && chat.username ? chat.username : undefined;
+        if (title || username) {
+          labels.push({ label: title ?? `@${username}`, username });
         }
       } catch {
         // group unreachable
@@ -53,7 +54,7 @@ async function getTrustedGroupLabels(): Promise<string[]> {
     }),
   );
 
-  cachedGroupLabels = labels.sort((a, b) => a.localeCompare(b));
+  cachedGroupLabels = labels.sort((a, b) => a.label.localeCompare(b.label));
   groupLabelCacheValidUntil = now + GROUP_LABEL_CACHE_TTL_MS;
   return cachedGroupLabels;
 }
@@ -318,23 +319,31 @@ bot.command('start', async (ctx) => {
   }
 
   const groupLabels = await getTrustedGroupLabels();
-  const groupListText = groupLabels.length > 0 ? ` (${groupLabels.join(', ')})` : '';
+  const groupListText =
+    groupLabels.length > 0
+      ? ` (${groupLabels
+          .map(({ label, username }) =>
+            username ? `<a href="https://t.me/${username}">${label}</a>` : label,
+          )
+          .join(', ')})`
+      : '';
 
   const welcomeText = [
-    '👋 Привет! Я Халва — бот для поиска обменов.',
-    '',
-    '📌 Как это работает:',
-    '1️⃣ Создайте заявку на обмен в мини-приложении.',
-    `2️⃣ Бот мониторит доверенные группы${groupListText} и находит подходящие предложения.`,
-    '3️⃣ При совпадении — получите контакт и ссылку на сообщение.',
-    '',
+    '<b>Халва</b> — бот для поиска обменов валюты без посредников и комиссий.',
+    '\n',
+    '<b>Как это работает:</b>',
+    `1️⃣ Создайте заявку на обмен в <a href="${config.miniAppUrl}">мини-приложении</a>.`,
+    `2️⃣ Бот находит подходящие предложения среди друзей и сообщений в доверенных группах${groupListText}.`,
+    '3️⃣ При совпадении — получите контакт автора предложения чтобы договориться об обмене напрямую.',
+    '\n',
     '🔒 Бот не хранит деньги и не участвует в расчётах — только соединяет людей.',
-    referrerUser ? `\n🎉 Вы и ${referrerUser.firstName} теперь друзья!` : '',
+    referrerUser ? `\n🎉 Вы и ${referrerUser.firstName} теперь друзья в Халве!` : '',
   ]
     .filter(Boolean)
     .join('\n');
 
   await ctx.reply(welcomeText, {
+    parse_mode: 'HTML',
     reply_markup: {
       inline_keyboard: [
         [{ text: 'Открыть Халву', web_app: { url: config.miniAppUrl } }],
