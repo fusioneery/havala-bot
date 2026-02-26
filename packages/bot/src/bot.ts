@@ -330,11 +330,14 @@ bot.command('start', async (ctx) => {
 
   const welcomeText = [
     '<b>Халва</b> — бот для поиска обменов валюты без посредников и комиссий.',
+    '',
     '<b>Как это работает:</b>',
-    `1️⃣ Создайте заявку на обмен в <a href="${config.miniAppUrl}">мини-приложении</a>.`,
-    `2️⃣ Бот находит подходящие предложения среди друзей и сообщений в доверенных группах${groupListText}.`,
-    '3️⃣ При совпадении — получите контакт автора предложения чтобы договориться об обмене напрямую.',
+    `1. Создайте заявку на обмен в <a href="${config.miniAppUrl}">мини-приложении</a>.`,
+    `2. Бот находит подходящие предложения среди друзей и сообщений в доверенных группах${groupListText}.`,
+    '3. При совпадении — получите контакт автора предложения чтобы договориться об обмене напрямую.',
+    '',
     '🔒 Бот не хранит деньги и не участвует в расчётах — только соединяет людей.',
+    '',
     referrerUser ? `\n🎉 Вы и ${referrerUser.firstName} теперь друзья в Халве!` : '',
   ]
     .filter(Boolean)
@@ -688,10 +691,9 @@ bot.callbackQuery('toggle_friend_notify', async (ctx) => {
       .set({ notifyOnFriendAdd: newValue, updatedAt: new Date() })
       .where(eq(schema.users.id, dbUser.id));
 
-    const originalText = ctx.callbackQuery.message?.text ?? '';
     const buttonLabel = newValue
-      ? '🔔 Не уведомлять о новых друзьях'
-      : '🔕 Уведомлять о новых друзьях';
+      ? '🔕 Не уведомлять о новых друзьях'
+      : '🔔Уведомлять о новых друзьях';
 
     const keyboard = new InlineKeyboard()
       .webApp('Создать заявку', config.miniAppUrl)
