@@ -12,7 +12,7 @@ Perform structured parsing of a batch of informal exchange messages in Russian (
 - amount_currency: a string with the currency code of this amount (for example, "EUR", "RUB"); empty string if not specified
 - take_payment_methods: an array of PaymentMethodGroup groups (see below) describing ALL currencies/methods that the person wants to RECEIVE ("take"/"search").
 - give_payment_methods: an array of PaymentMethodGroup groups describing ALL currencies/methods that the person is WILLING TO GIVE ("give"/"offer").
-- partial: true if partial exchange is allowed (words such as "in parts" and similar are mentioned); otherwise false.
+- partial: true by default. Set to false ONLY if the person explicitly states that partial exchange is NOT allowed (words like "только целиком", "не по частям", "полной суммой", "весь объём сразу" etc.). If nothing is said about partial — assume partial=true.
 - partial_threshold: the minimum allowed amount for partial execution (0 if not specified).
 
 #### PaymentMethodGroup (payment method group):
@@ -39,7 +39,7 @@ General rule:
 - Determine is_exchange_offer: if the message explicitly contains an offer to make an exchange, set true; if it only searches for a transaction option/requests, set false.
 
  - Correctly analyze possible groups of methods and currencies (PaymentMethodGroup), add ALL possible options from the message (for example, if they want euros on Revolut and zlotys on BLIK at the same time — both as separate PaymentMethodGroups).
-    - If partial exchange is explicitly allowed, partial=true (according to the words/context).
+    - Remember: partial=true by default. Set partial=false only if explicitly forbidden.
 3. After reasoning on all messages, output the final JSON: {"offers":[...]} with the result for each message, message_index corresponds to the index of the original message.
 
 # Examples
@@ -52,7 +52,7 @@ General rule:
 
 **Output:**
 Reasoning:
-0: Сообщение содержит две части. "#ищу евро на револют или злотые blik" — человек хочет получить (take) евро на Revolut или злотые через BLIK. Revolut и BLIK — международные методы, значит methods=["swift"]. Это два варианта — EUR и PLN — значит две отдельные PaymentMethodGroup в take. "#предлагаю 24901 рублей по сбп курс гугла" — готов отдать (give) 24901 рублей по СБП. СБП — российский банк, methods=["russian_banks"]. Сумма 24901, валюта RUB. Человек одновременно ищет и предлагает — значит is_exchange_offer=true.
+0: Сообщение содержит две части. "#ищу евро на револют или злотые blik" — человек хочет получить (take) евро на Revolut или злотые через BLIK. Revolut и BLIK — международные методы, значит methods=["swift"]. Это два варианта — EUR и PLN — значит две отдельные PaymentMethodGroup в take. "#предлагаю 24901 рублей по сбп курс гугла" — готов отдать (give) 24901 рублей по СБП. СБП — российский банк, methods=["russian_banks"]. Сумма 24901, валюта RUB. Человек одновременно ищет и предлагает — значит is_exchange_offer=true. Про частичный обмен ничего не сказано — по умолчанию partial=true.
 1: "#ищу 500 евро на револют/ИБАН" — хочет получить (take) 500 евро через Revolut или IBAN. Оба метода международные — methods=["swift"]. "Можно по частям" — partial=true. "#предлагаю рубли по курсу Гугла через сбп/на тбанк" — готов отдать (give) рубли через СБП или Т-Банк. Оба — российские банки, methods=["russian_banks"]. Сумма явно указана как 500 EUR (в части "ищу"). Человек и ищет, и предлагает — is_exchange_offer=true.
 
 {
@@ -69,7 +69,7 @@ Reasoning:
       "give_payment_methods": [
         {"currency":"RUB", "methods":["russian_banks"]}
       ],
-      "partial": false,
+      "partial": true,
       "partial_threshold": 0
     },
     {
@@ -100,6 +100,7 @@ Reasoning:
 - amount — only explicitly/unambiguously specified amounts.
 - is_exchange_offer: true if the person is offering something to others and is clearly ready to exchange; false if they are only looking for an option/expressing a request.
 - CRITICAL: methods in PaymentMethodGroup must ONLY contain values from ["russian_banks", "local_banks", "swift", "crypto"]. Never use specific bank or service names as method values.
+- DEFAULT PARTIAL: partial=true by default, partial_threshold=0. Only set partial=false if explicitly forbidden in the message.
 
 ---
 (Remember: Your task is to analyze each message in the batch, first explaining the logic (in Russian), then combining the results into a single JSON with offers according to the new scheme. Finish processing only after parsing each message.)

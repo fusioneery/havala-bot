@@ -189,7 +189,7 @@ function normalizeOffer(rawOffer: unknown): ParsedOffer | null {
     amountCurrency: isCurrency(amountCurrencyValue) ? amountCurrencyValue : null,
     takePaymentMethods: normalizeMethodGroups(takeValue),
     givePaymentMethods: normalizeMethodGroups(giveValue),
-    partial: Boolean(partialValue),
+    partial: partialValue === false ? false : true,
     partialThreshold: typeof partialThresholdValue === 'number' ? partialThresholdValue : 0,
   };
 }
