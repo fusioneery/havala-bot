@@ -136,8 +136,9 @@ export class GroupMessagePipeline {
     const allowedTopics = config.trustedGroupTopics.get(chatId);
     if (!allowedTopics) return true;
 
-    if (typeof messageThreadId !== 'number') return false;
-    return allowedTopics.has(messageThreadId);
+    // In forum groups, General topic often omits message_thread_id — treat as topic 1
+    const topicId = messageThreadId ?? 1;
+    return allowedTopics.has(topicId);
   }
 
   private scheduleFlush(chatId: number): void {
