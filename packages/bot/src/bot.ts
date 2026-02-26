@@ -12,9 +12,10 @@ import { trackUserFromContext } from './services/user-event-tracker';
 export const bot = new Bot(config.botToken);
 
 const pendingErrorReports = new Map<number, number>();
-const ADMIN_USERNAME_CACHE_TTL_MS = 5 * 60 * 1000;
-let cachedAdminUsernames: string[] = [];
-let adminUsernameCacheValidUntil = 0;
+
+const GROUP_LABEL_CACHE_TTL_MS = 10 * 60 * 1000;
+let cachedGroupLabels: string[] = [];
+let groupLabelCacheValidUntil = 0;
 
 const groupMessagePipeline = new GroupMessagePipeline({
   sendDirectMessage: async (telegramId, text, options) => {
@@ -25,50 +26,36 @@ const groupMessagePipeline = new GroupMessagePipeline({
   },
 });
 
-async function getAdminUsernames(): Promise<string[]> {
+async function getTrustedGroupLabels(): Promise<string[]> {
   const now = Date.now();
-  if (adminUsernameCacheValidUntil > now) {
-    return cachedAdminUsernames;
+  if (groupLabelCacheValidUntil > now) return cachedGroupLabels;
+
+  const ids = config.trustedGroupIds;
+  if (ids.length === 0) {
+    cachedGroupLabels = [];
+    groupLabelCacheValidUntil = now + GROUP_LABEL_CACHE_TTL_MS;
+    return cachedGroupLabels;
   }
 
-  if (config.adminIds.length === 0) {
-    cachedAdminUsernames = [];
-    adminUsernameCacheValidUntil = now + ADMIN_USERNAME_CACHE_TTL_MS;
-    return cachedAdminUsernames;
-  }
-
-  const usernames = new Set<string>();
-
+  const labels: string[] = [];
   await Promise.all(
-    config.adminIds.map(async (adminId) => {
+    ids.map(async (chatId) => {
       try {
-        const chat = await bot.api.getChat(adminId);
-        if ('username' in chat && typeof chat.username === 'string' && chat.username.length > 0) {
-          usernames.add(`@${chat.username}`);
+        const chat = await bot.api.getChat(chatId);
+        if ('username' in chat && chat.username) {
+          labels.push(`@${chat.username}`);
+        } else if ('title' in chat && chat.title) {
+          labels.push(chat.title);
         }
-      } catch (error) {
-        console.warn(`[start] Failed to resolve admin username for ${adminId}:`, error);
+      } catch {
+        // group unreachable
       }
     }),
   );
 
-  // Fallback to locally tracked users if Telegram API doesn't return usernames.
-  if (usernames.size < config.adminIds.length) {
-    const rows = await db
-      .select({ username: schema.users.username })
-      .from(schema.users)
-      .where(inArray(schema.users.telegramId, config.adminIds));
-
-    for (const row of rows) {
-      if (row.username) {
-        usernames.add(`@${row.username}`);
-      }
-    }
-  }
-
-  cachedAdminUsernames = Array.from(usernames).sort((a, b) => a.localeCompare(b));
-  adminUsernameCacheValidUntil = now + ADMIN_USERNAME_CACHE_TTL_MS;
-  return cachedAdminUsernames;
+  cachedGroupLabels = labels.sort((a, b) => a.localeCompare(b));
+  groupLabelCacheValidUntil = now + GROUP_LABEL_CACHE_TTL_MS;
+  return cachedGroupLabels;
 }
 
 // Track any event with user info: upsert users + group_members (for groups)
@@ -324,21 +311,19 @@ bot.command('start', async (ctx) => {
     }
   }
 
-  const adminUsernames = await getAdminUsernames();
-  const adminListText = adminUsernames.length > 0 ? adminUsernames.join(', ') : 'не удалось определить';
+  const groupLabels = await getTrustedGroupLabels();
+  const groupListText = groupLabels.length > 0 ? ` (${groupLabels.join(', ')})` : '';
 
   const welcomeText = [
-    'Привет! Я Халва бот.',
+    '👋 Привет! Я Халва — бот для поиска обменов.',
     '',
-    'Как это работает:',
-    '1. Вы создаёте заявку на обмен в мини-приложении.',
-    '2. Бот отслеживает сообщения в доверенных Telegram-группах и находит релевантные предложения.',
-    '3. Когда есть совпадение, бот присылает контакт и ссылку на сообщение для связи напрямую.',
+    '📌 Как это работает:',
+    '1️⃣ Создайте заявку на обмен в мини-приложении.',
+    `2️⃣ Бот мониторит доверенные группы${groupListText} и находит подходящие предложения.`,
+    '3️⃣ При совпадении — получите контакт и ссылку на сообщение.',
     '',
-    'Бот не хранит деньги и не участвует в расчётах - он только соединяет людей.',
-    referrerUser ? `🎉 Вы и ${referrerUser.firstName} теперь друзья.` : '',
-    '',
-    `Админы бота: ${adminListText}`,
+    '🔒 Бот не хранит деньги и не участвует в расчётах — только соединяет людей.',
+    referrerUser ? `\n🎉 Вы и ${referrerUser.firstName} теперь друзья!` : '',
   ]
     .filter(Boolean)
     .join('\n');
