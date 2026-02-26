@@ -9,8 +9,9 @@ const BOT_LINK = `${import.meta.env.VITE_BOT_USERNAME}`;
 
 /** Open a t.me link natively inside the Telegram Mini App, falls back to window.open. */
 export function openTelegramLink(url: string): void {
-  const tg = (window as unknown as { Telegram?: { WebApp?: { openTelegramLink?: (url: string) => void } } })
+  const tg = (window as unknown as { Telegram?: { WebApp?: { openTelegramLink?: (url: string) => void; version?: string; platform?: string } } })
     .Telegram?.WebApp;
+  console.log('[openTelegramLink]', { url, hasTgMethod: !!tg?.openTelegramLink, version: tg?.version, platform: tg?.platform });
   if (tg?.openTelegramLink) {
     tg.openTelegramLink(url);
   } else {
@@ -59,5 +60,7 @@ export function buildDmUrl(params: {
     `если что, нашёл тебя через Халву: ${botLink}`,
   ].join('\n');
 
-  return `https://t.me/${username}?text=${encodeURIComponent(messageText)}`;
+  const dmUrl = `https://t.me/${username}?text=${encodeURIComponent(messageText)}`;
+  console.log('[buildDmUrl]', { username, matchSource, dealCode, urlLength: dmUrl.length, url: dmUrl });
+  return dmUrl;
 }

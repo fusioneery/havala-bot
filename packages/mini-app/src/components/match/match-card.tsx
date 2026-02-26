@@ -166,7 +166,7 @@ export function MatchCard({ match, searchedAt }: MatchCardProps) {
       {/* Actions */}
       <div className="flex flex-col gap-3">
         {dmUrl && <button
-          onClick={() => openTelegramLink(dmUrl)}
+          onClick={() => { console.log('[MatchCard] Написать clicked', { dmUrl }); openTelegramLink(dmUrl); }}
           className="w-full bg-primary text-primary-foreground h-[52px] rounded-[20px] font-bold text-[16px] flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
         >
           <MessageCircle className="w-4.5 h-4.5" />

@@ -155,7 +155,7 @@ function MatchRow({ match, compact = false, dealCode }: MatchRowProps) {
       {/* Write button */}
       {dmUrl && (
         <button
-          onClick={() => openTelegramLink(dmUrl)}
+          onClick={() => { console.log('[MatchRow] Написать clicked', { dmUrl }); openTelegramLink(dmUrl); }}
           className="h-8 px-3 rounded-full bg-primary text-primary-foreground text-[12px] font-semibold flex items-center gap-1 active:scale-95 transition shrink-0"
         >
           <MessageCircle className="w-3 h-3" />
@@ -382,7 +382,7 @@ export function OfferCard({ offer, onCancel }: OfferCardProps) {
                 </div>
                 {dmUrl && (
                   <button
-                    onClick={() => openTelegramLink(dmUrl)}
+                    onClick={() => { console.log('[OfferCard topMatch] Написать clicked', { dmUrl }); openTelegramLink(dmUrl); }}
                     className="h-9 px-4 rounded-full bg-primary text-primary-foreground text-[13px] font-semibold flex items-center gap-1.5 active:scale-95 transition shrink-0"
                   >
                     <MessageCircle className="w-3.5 h-3.5" />
