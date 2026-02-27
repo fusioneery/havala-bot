@@ -3,35 +3,15 @@ import { and, eq } from 'drizzle-orm';
 import { config } from '../config';
 import { db, schema } from '../db';
 import { isBlacklisted } from './blacklist';
+import { downloadAndSaveAvatar } from './avatar-storage';
 
 type TelegramUser = { id: number; username?: string; first_name: string; is_bot?: boolean };
 
+/**
+ * Download user's Telegram avatar to local storage and return the static URL.
+ */
 export async function getTelegramAvatarUrl(telegramUserId: number): Promise<string | null> {
-  try {
-    const photosRes = await fetch(
-      `https://api.telegram.org/bot${config.botToken}/getUserProfilePhotos?user_id=${telegramUserId}&limit=1`,
-    );
-    const photosData = (await photosRes.json()) as {
-      ok: boolean;
-      result?: { photos?: Array<Array<{ file_id: string }>> };
-    };
-    if (!photosData.ok || !photosData.result?.photos?.length) return null;
-
-    const sizes = photosData.result.photos[0];
-    if (!sizes?.length) return null;
-    const largest = sizes[sizes.length - 1];
-    const fileId = largest.file_id;
-
-    const fileRes = await fetch(
-      `https://api.telegram.org/bot${config.botToken}/getFile?file_id=${encodeURIComponent(fileId)}`,
-    );
-    const fileData = (await fileRes.json()) as { ok: boolean; result?: { file_path: string } };
-    if (!fileData.ok || !fileData.result?.file_path) return null;
-
-    return `https://api.telegram.org/file/bot${config.botToken}/${fileData.result.file_path}`;
-  } catch {
-    return null;
-  }
+  return downloadAndSaveAvatar(telegramUserId);
 }
 
 function isTrustedChat(chatId: number): boolean {

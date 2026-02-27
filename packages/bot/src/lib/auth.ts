@@ -9,7 +9,7 @@ import {
 } from '@telegram-apps/init-data-node';
 import { db, schema } from '../db';
 import { config } from '../config';
-import { getTelegramAvatarUrl } from '../services/user-event-tracker';
+import { downloadAndSaveAvatar } from '../services/avatar-storage';
 
 export interface AuthResult {
   userId: number;
@@ -77,11 +77,8 @@ export async function authenticateRequest(
     || (telegramUser.firstName as string | undefined)
     || telegramUser.id.toString();
   const username = (telegramUser.username as string | undefined) ?? null;
-  // photo_url is only in init data when launched from attachment menu;
-  // fall back to Bot API getUserProfilePhotos
-  const photoUrl = (telegramUser.photo_url as string | undefined)
-    || (telegramUser.photoUrl as string | undefined)
-    || await getTelegramAvatarUrl(telegramUser.id as number);
+  // Always download avatar to local storage via Bot API
+  const photoUrl = await downloadAndSaveAvatar(telegramUser.id as number);
 
   const result = await findOrCreateUser({
     telegramId: telegramUser.id as number,
