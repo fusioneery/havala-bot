@@ -9,3 +9,4 @@ data/avatars/
 .dev.log
 packages/llm-client/scripts/test-*
 .dmux/
+.worktrees/
