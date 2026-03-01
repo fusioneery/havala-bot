@@ -1,8 +1,6 @@
 import { ArrowRight, ChevronRight, Github, Globe, MessageCircle, Repeat, Search, Shield, Users } from 'lucide-react';
 
 import createOrderScreenshot from '@/assets/screenshots/create-order-dark.png';
-import homeDarkScreenshot from '@/assets/screenshots/home-dark.png';
-import homeLightScreenshot from '@/assets/screenshots/home-light.png';
 import matchesScreenshot from '@/assets/screenshots/matches-detail-1.png';
 import notificationScreenshot from '@/assets/screenshots/notification.png';
 
@@ -62,32 +60,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── App preview (light & dark) ── */}
-      <section className="py-12 px-6">
-        <h2 className="text-[24px] font-bold mb-6 text-center">Светлая и тёмная тема</h2>
-        <div className="flex flex-wrap justify-center gap-6 max-w-2xl mx-auto">
-          <div className="flex flex-col items-center gap-2">
-            <div className="w-[140px] aspect-[402/874] rounded-[20px] border-2 border-border overflow-hidden shadow-lg">
-              <img
-                src={homeLightScreenshot}
-                alt="Халва — светлая тема"
-                className="w-full h-full object-cover object-top"
-              />
-            </div>
-            <span className="text-[13px] text-muted-foreground">Светлая</span>
-          </div>
-          <div className="flex flex-col items-center gap-2">
-            <div className="w-[140px] aspect-[402/874] rounded-[20px] border-2 border-border overflow-hidden shadow-lg">
-              <img
-                src={homeDarkScreenshot}
-                alt="Халва — тёмная тема"
-                className="w-full h-full object-cover object-top"
-              />
-            </div>
-            <span className="text-[13px] text-muted-foreground">Тёмная</span>
-          </div>
-        </div>
-      </section>
 
       {/* ── How It Works ── */}
       <section className="px-6 py-12 max-w-xl mx-auto">
