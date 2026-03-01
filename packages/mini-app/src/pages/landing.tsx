@@ -1,4 +1,4 @@
-import { ArrowRight, Github, Globe, MessageCircle, Repeat, Search, Shield, Users } from 'lucide-react';
+import { ArrowRight, ChevronDown, ChevronRight, Github, Globe, MessageCircle, Repeat, Search, Shield, Users } from 'lucide-react';
 
 const BOT_USERNAME = import.meta.env.VITE_BOT_USERNAME || 'halwa_app_bot';
 
@@ -6,7 +6,7 @@ export default function LandingPage() {
   const botUrl = `https://t.me/${BOT_USERNAME.replace('@', '')}`;
 
   return (
-    <div className="min-h-dvh bg-background text-foreground overflow-y-auto">
+    <div className="h-dvh bg-background text-foreground overflow-y-auto">
       {/* ── Hero ── */}
       <section className="px-6 pt-16 pb-12 max-w-xl mx-auto text-center">
         <h1 className="text-[40px] sm:text-[52px] font-extrabold tracking-tight leading-[1.1] mb-4">
@@ -27,21 +27,22 @@ export default function LandingPage() {
       {/* ── 3-Step Flow ── */}
       <section className="px-6 py-12 max-w-3xl mx-auto">
         <h2 className="text-[24px] font-bold mb-8 text-center">Три шага к обмену</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+        <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
           <FlowStep
-            n={1}
             icon={<Search className="w-5 h-5" />}
             title="Создайте заявку"
             description="Укажите какую валюту хотите обменять, на что и в каком объёме."
           />
+          <ChevronDown className="w-5 h-5 text-muted-foreground shrink-0 sm:hidden" />
+          <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0 hidden sm:block" />
           <FlowStep
-            n={2}
             icon={<Users className="w-5 h-5" />}
             title="Получите мэтч"
             description="Бот найдёт подходящие предложения среди друзей и участников доверенных групп."
           />
+          <ChevronDown className="w-5 h-5 text-muted-foreground shrink-0 sm:hidden" />
+          <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0 hidden sm:block" />
           <FlowStep
-            n={3}
             icon={<MessageCircle className="w-5 h-5" />}
             title="Договоритесь напрямую"
             description="Свяжитесь с автором предложения прямо в Telegram и обменяйтесь."
@@ -93,14 +94,13 @@ export default function LandingPage() {
 
 /* ── Sub-components ── */
 
-function FlowStep({ n, icon, title, description }: {
-  n: number;
+function FlowStep({ icon, title, description }: {
   icon: React.ReactNode;
   title: string;
   description: string;
 }) {
   return (
-    <div className="flex flex-col items-center text-center">
+    <div className="flex flex-col items-center text-center flex-1">
       {/* Phone-frame screenshot placeholder */}
       <div className="w-full max-w-[220px] aspect-[9/16] bg-card rounded-[24px] border-2 border-accent flex flex-col items-center justify-center p-4 relative overflow-hidden mb-4">
         {/* Notch */}
@@ -114,15 +114,9 @@ function FlowStep({ n, icon, title, description }: {
           <div className="w-full h-8 bg-accent rounded-[12px]" />
           <div className="w-2/3 h-8 bg-accent rounded-[12px]" />
         </div>
-        {/* When screenshot is ready, replace placeholder with:
-            <img src="/screenshots/step-{n}.png" alt={screenshotAlt} className="w-full h-full object-cover" />
-        */}
       </div>
       {/* Step info */}
       <div className="flex items-center gap-2 mb-2">
-        <span className="flex-shrink-0 w-7 h-7 rounded-full bg-lime text-[#1C1C1E] text-[13px] font-bold flex items-center justify-center">
-          {n}
-        </span>
         <span className="text-muted-foreground">{icon}</span>
         <h3 className="text-[16px] font-semibold">{title}</h3>
       </div>
@@ -134,7 +128,7 @@ function FlowStep({ n, icon, title, description }: {
 function ExplainerItem({ icon, title, text }: { icon: React.ReactNode; title: string; text: string }) {
   return (
     <div className="flex gap-3">
-      <span className="flex-shrink-0 mt-0.5 text-lime">{icon}</span>
+      <span className="flex-shrink-0 mt-[3px] text-accent2">{icon}</span>
       <div>
         <h3 className="text-[15px] font-semibold mb-0.5">{title}</h3>
         <p className="text-[14px] text-muted-foreground leading-relaxed">{text}</p>
