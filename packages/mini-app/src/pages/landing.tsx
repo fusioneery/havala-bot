@@ -7,24 +7,20 @@ export default function LandingPage() {
 
   return (
     <div className="h-dvh bg-background text-foreground overflow-y-auto">
-      {/* ── Header ── */}
-      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-lg border-b border-border">
-        <div className="flex items-center justify-between px-6 h-14 max-w-5xl mx-auto">
-          <span className="text-[20px] font-extrabold tracking-tight">
-            Хал<span className="text-lime">в</span>а
-          </span>
-          <a
-            href={botUrl}
-            className="inline-flex items-center gap-1.5 bg-lime hover:bg-lime-hover text-[#1C1C1E] h-9 px-4 rounded-full font-semibold text-[14px] active:scale-[0.97] transition-all"
-          >
-            Перейти в бота
-            <ArrowRight className="w-4 h-4" />
-          </a>
-        </div>
-      </header>
-
       {/* ── Hero ── */}
       <section className="px-6 pt-16 pb-12 max-w-xl mx-auto text-center">
+        <div className="flex items-center justify-center gap-4 mb-4">
+          <h1 className="text-[40px] sm:text-[52px] font-extrabold tracking-tight leading-[1.1]">
+            Хал<span className="text-lime">в</span>а
+          </h1>
+          <a
+            href={botUrl}
+            className="inline-flex items-center gap-2 bg-lime hover:bg-lime-hover text-[#1C1C1E] h-[56px] px-8 rounded-[20px] font-bold text-[17px] active:scale-[0.98] transition-all shadow-[0_8px_24px_rgba(200,241,53,0.4)]"
+          >
+            Перейти в бота
+            <ArrowRight className="w-5 h-5" />
+          </a>
+        </div>
         <p className="text-[18px] sm:text-[20px] text-muted-foreground leading-relaxed max-w-xl mx-auto">
           Меняй валюту напрямую среди друзей и участников доверенных групп — без посредников и комиссий
         </p>
