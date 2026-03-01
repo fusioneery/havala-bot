@@ -30,7 +30,7 @@ export default function LandingPage() {
       <section className="py-12">
         <h2 className="text-[24px] font-bold mb-8 text-center px-6">Три шага к обмену</h2>
         <div
-          className="flex gap-4 px-[5vw] overflow-x-auto snap-x snap-mandatory sm:overflow-visible sm:snap-none sm:px-6 sm:items-center sm:max-w-5xl sm:mx-auto"
+          className="flex gap-4 px-[5vw] overflow-x-auto snap-x snap-mandatory sm:overflow-visible sm:snap-none sm:gap-4 sm:px-6 sm:items-center sm:max-w-5xl sm:mx-auto"
           style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
         >
           <FlowStep
@@ -118,7 +118,7 @@ function FlowStep({ icon, title, description }: {
   description: string;
 }) {
   return (
-    <div className="flex flex-col items-center text-center shrink-0 w-[90vw] snap-center sm:w-auto sm:shrink sm:snap-align-none sm:flex-1">
+    <div className="flex flex-col items-center text-center shrink-0 w-[82vw] snap-center sm:w-auto sm:shrink sm:snap-align-none sm:flex-1">
       {/* Phone-frame screenshot placeholder */}
       <div className="w-full max-w-[220px] aspect-[9/16] bg-card rounded-[24px] border-2 border-accent flex flex-col items-center justify-center p-4 relative overflow-hidden mb-4">
         {/* Notch */}
