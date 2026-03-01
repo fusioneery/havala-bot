@@ -5,48 +5,24 @@ import { GroupTooltip } from '@/components/ui/group-tooltip';
 import { ProgressiveBlur } from '@/components/ui/progressive-blur';
 import { TrustedGroupsProvider, useTrustedGroups } from '@/hooks/use-trusted-groups';
 import { apiFetch } from '@/lib/api';
+import LandingPage from '@/pages/landing';
 import AboutPage from '@/pages/about';
 import CreateOrderPage from '@/pages/create-order';
 import FeedPage from '@/pages/feed';
 import FriendsPage from '@/pages/friends';
 import MatchesPage from '@/pages/matches';
 import type { MyOfferItem } from '@hawala/shared';
-import { Bot, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { BrowserRouter, Outlet, Route, Routes, useNavigate } from 'react-router-dom';
 
-const IS_DEV = import.meta.env.DEV;
-const BOT_USERNAME = import.meta.env.VITE_BOT_USERNAME || 'halwa_app_bot';
-
-function NotInBotScreen() {
-  const botUrl = `https://t.me/${BOT_USERNAME.replace('@', '')}`;
-
-  return (
-    <div className="w-full h-dvh bg-background text-foreground flex flex-col items-center justify-center px-6">
-      <div className="flex flex-col items-center text-center max-w-sm">
-        <div className="w-20 h-20 rounded-full bg-accent flex items-center justify-center mb-6">
-          <Bot className="w-10 h-10 text-muted-foreground" />
-        </div>
-        <h1 className="text-[24px] font-bold mb-3">Халва работает только внутри бота</h1>
-        <p className="text-muted-foreground text-[15px] mb-8">
-          Откройте приложение через Telegram бота, чтобы продолжить
-        </p>
-        <a
-          href={botUrl}
-          className="w-full bg-lime hover:bg-lime-hover text-[#1C1C1E] h-[56px] rounded-[20px] font-bold text-[17px] active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-[0_8px_24px_rgba(200,241,53,0.4)]"
-        >
-          Перейти в бота
-        </a>
-      </div>
-    </div>
-  );
-}
-
+const IS_DEV = import.meta.env.VITE_DEV === 'true' || import.meta.env.VITE_DEV === '1';
 function useIsAuthenticated(): boolean | null {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (IS_DEV) {
+      debugger;
       setIsAuthenticated(true);
       return;
     }
@@ -70,8 +46,13 @@ function HomePage() {
 
   useEffect(() => {
     apiFetch('/api/offers')
-      .then((res) => res.json())
-      .then((data) => setOffers(data))
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then((data) => {
+        if (Array.isArray(data)) setOffers(data);
+      })
       .catch(console.error)
       .finally(() => setOffersLoading(false));
   }, []);
@@ -178,7 +159,7 @@ function App() {
   }
 
   if (!isAuthenticated) {
-    return <NotInBotScreen />;
+    return <LandingPage />;
   }
 
   return (
