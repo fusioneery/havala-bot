@@ -3,8 +3,10 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import { installStressMocks } from './stress-test'
+import { installScreenMocks } from './screen-mock'
 
 installStressMocks()
+installScreenMocks()
 
 declare global {
   interface Window {
@@ -49,6 +51,10 @@ function applyTheme() {
 }
 
 applyTheme();
+
+if (!window.Telegram?.WebApp?.initData) {
+  document.documentElement.classList.remove('dark');
+}
 
 window.Telegram?.WebApp?.onEvent?.('themeChanged', applyTheme);
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
