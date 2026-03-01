@@ -1,5 +1,11 @@
 import { ArrowRight, ChevronRight, Github, Globe, MessageCircle, Repeat, Search, Shield, Users } from 'lucide-react';
 
+import createOrderScreenshot from '@/assets/screenshots/create-order-dark.png';
+import homeDarkScreenshot from '@/assets/screenshots/home-dark.png';
+import homeLightScreenshot from '@/assets/screenshots/home-light.png';
+import matchesScreenshot from '@/assets/screenshots/matches-detail-1.png';
+import notificationScreenshot from '@/assets/screenshots/notification.png';
+
 const BOT_USERNAME = import.meta.env.VITE_BOT_USERNAME || 'halwa_app_bot';
 
 export default function LandingPage() {
@@ -37,26 +43,56 @@ export default function LandingPage() {
             icon={<Search className="w-5 h-5" />}
             title="Создайте заявку"
             description="Укажите какую валюту хотите обменять, на что и в каком объёме."
+            screenshot={createOrderScreenshot}
           />
           <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0 hidden sm:block" />
           <FlowStep
             icon={<Users className="w-5 h-5" />}
             title="Получите мэтч"
             description="Бот найдёт подходящие предложения среди друзей и участников доверенных групп."
+            screenshot={matchesScreenshot}
           />
           <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0 hidden sm:block" />
           <FlowStep
             icon={<MessageCircle className="w-5 h-5" />}
             title="Договоритесь напрямую"
             description="Свяжитесь с автором предложения прямо в Telegram и обменяйтесь."
+            screenshot={notificationScreenshot}
           />
+        </div>
+      </section>
+
+      {/* ── App preview (light & dark) ── */}
+      <section className="py-12 px-6">
+        <h2 className="text-[24px] font-bold mb-6 text-center">Светлая и тёмная тема</h2>
+        <div className="flex flex-wrap justify-center gap-6 max-w-2xl mx-auto">
+          <div className="flex flex-col items-center gap-2">
+            <div className="w-[140px] aspect-[402/874] rounded-[20px] border-2 border-border overflow-hidden shadow-lg">
+              <img
+                src={homeLightScreenshot}
+                alt="Халва — светлая тема"
+                className="w-full h-full object-cover object-top"
+              />
+            </div>
+            <span className="text-[13px] text-muted-foreground">Светлая</span>
+          </div>
+          <div className="flex flex-col items-center gap-2">
+            <div className="w-[140px] aspect-[402/874] rounded-[20px] border-2 border-border overflow-hidden shadow-lg">
+              <img
+                src={homeDarkScreenshot}
+                alt="Халва — тёмная тема"
+                className="w-full h-full object-cover object-top"
+              />
+            </div>
+            <span className="text-[13px] text-muted-foreground">Тёмная</span>
+          </div>
         </div>
       </section>
 
       {/* ── How It Works ── */}
       <section className="px-6 py-12 max-w-xl mx-auto">
         <h2 className="text-[24px] font-bold mb-6 text-center">Принцип работы</h2>
-        <div className="bg-card rounded-[20px] p-6 space-y-5">
+        <div className="bg-card rounded-[20px] p-6 space-y-7">
           <ExplainerItem
             icon={<Repeat className="w-4 h-4" />}
             title="P2P-обмен"
@@ -112,33 +148,43 @@ export default function LandingPage() {
 
 /* ── Sub-components ── */
 
-function FlowStep({ icon, title, description }: {
+function FlowStep({ icon, title, description, screenshot }: {
   icon: React.ReactNode;
   title: string;
   description: string;
+  screenshot?: string;
 }) {
   return (
-    <div className="flex flex-col items-center text-center shrink-0 w-[82vw] snap-center sm:w-auto sm:shrink sm:snap-align-none sm:flex-1">
-      {/* Phone-frame screenshot placeholder */}
-      <div className="w-full sm:max-w-[220px] aspect-[9/16] bg-card rounded-[24px] border-2 border-accent flex flex-col items-center justify-center p-4 relative overflow-hidden mb-4">
+    <div className="flex flex-col items-center text-center shrink-0 w-[86vw] snap-center sm:w-auto sm:shrink sm:snap-align-none sm:flex-1">
+      {/* Phone-frame screenshot */}
+      <div className="w-full sm:max-w-[220px] aspect-[402/874] bg-card rounded-[24px] border-2 border-accent relative overflow-hidden mb-4">
         {/* Notch */}
-        <div className="absolute top-3 w-16 h-1.5 bg-accent rounded-full" />
-        {/* Placeholder skeleton */}
-        <div className="w-10 h-10 rounded-full bg-accent mb-3" />
-        <div className="w-3/4 h-2 bg-accent rounded-full mb-2" />
-        <div className="w-1/2 h-2 bg-accent rounded-full mb-4" />
-        <div className="w-full space-y-2">
-          <div className="w-full h-8 bg-accent rounded-[12px]" />
-          <div className="w-full h-8 bg-accent rounded-[12px]" />
-          <div className="w-2/3 h-8 bg-accent rounded-[12px]" />
-        </div>
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 w-16 h-1.5 bg-accent rounded-full z-10" />
+        {screenshot ? (
+          <img
+            src={screenshot}
+            alt={title}
+            className="w-full h-full object-cover object-top"
+          />
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center px-4 pt-[50px] pb-4">
+            <div className="w-10 h-10 rounded-full bg-accent mb-3" />
+            <div className="w-3/4 h-2 bg-accent rounded-full mb-2" />
+            <div className="w-1/2 h-2 bg-accent rounded-full mb-4" />
+            <div className="w-full space-y-2">
+              <div className="w-full h-8 bg-accent rounded-[12px]" />
+              <div className="w-full h-8 bg-accent rounded-[12px]" />
+              <div className="w-2/3 h-8 bg-accent rounded-[12px]" />
+            </div>
+          </div>
+        )}
       </div>
       {/* Step info */}
       <div className="flex items-center gap-2 mb-2">
         <span className="text-muted-foreground">{icon}</span>
         <h3 className="text-[16px] font-semibold">{title}</h3>
       </div>
-      <p className="text-[14px] text-muted-foreground leading-relaxed max-w-[240px] md:max-w-none">{description}</p>
+      <p className="text-[14px] text-muted-foreground leading-relaxed max-w-[280px] md:max-w-none">{description}</p>
     </div>
   );
 }
@@ -162,7 +208,9 @@ function HeartIcon() {
       fill="currentColor"
       className="w-3.5 h-3.5 text-red-500"
       style={{ animation: 'heartbeat 1.2s ease-in-out infinite' }}
+      aria-hidden
     >
+      <title>Сделано с любовью</title>
       <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
       <style>{`
         @keyframes heartbeat {
