@@ -25,9 +25,6 @@ export default function LandingPage() {
 
       {/* ── Hero ── */}
       <section className="px-6 pt-16 pb-12 max-w-xl mx-auto text-center">
-        <h1 className="text-[40px] sm:text-[52px] font-extrabold tracking-tight leading-[1.1] mb-4">
-          Хал<span className="text-lime">в</span>а
-        </h1>
         <p className="text-[18px] sm:text-[20px] text-muted-foreground leading-relaxed max-w-xl mx-auto">
           Меняй валюту напрямую среди друзей и участников доверенных групп — без посредников и комиссий
         </p>
