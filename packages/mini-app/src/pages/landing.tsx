@@ -1,4 +1,4 @@
-import { ArrowRight, Search, Users, MessageCircle, Shield, Github, Globe, Repeat } from 'lucide-react';
+import { ArrowRight, Github, Globe, MessageCircle, Repeat, Search, Shield, Users } from 'lucide-react';
 
 const BOT_USERNAME = import.meta.env.VITE_BOT_USERNAME || 'halwa_app_bot';
 
@@ -9,9 +9,6 @@ export default function LandingPage() {
     <div className="min-h-dvh bg-background text-foreground overflow-y-auto">
       {/* ── Hero ── */}
       <section className="px-6 pt-16 pb-12 max-w-xl mx-auto text-center">
-        <div className="inline-flex items-center gap-2 bg-card rounded-full px-4 py-2 mb-6">
-          <span className="text-[13px] font-medium text-muted-foreground">Telegram Mini App</span>
-        </div>
         <h1 className="text-[40px] sm:text-[52px] font-extrabold tracking-tight leading-[1.1] mb-4">
           Хал<span className="text-lime">в</span>а
         </h1>
@@ -36,21 +33,18 @@ export default function LandingPage() {
             icon={<Search className="w-5 h-5" />}
             title="Создайте заявку"
             description="Укажите какую валюту хотите обменять, на что и в каком объёме."
-            screenshotAlt="Экран создания заявки"
           />
           <FlowStep
             n={2}
             icon={<Users className="w-5 h-5" />}
             title="Получите мэтч"
             description="Бот найдёт подходящие предложения среди друзей и участников доверенных групп."
-            screenshotAlt="Экран мэтчей"
           />
           <FlowStep
             n={3}
             icon={<MessageCircle className="w-5 h-5" />}
             title="Договоритесь напрямую"
             description="Свяжитесь с автором предложения прямо в Telegram и обменяйтесь."
-            screenshotAlt="Экран ленты предложений"
           />
         </div>
       </section>
@@ -99,12 +93,11 @@ export default function LandingPage() {
 
 /* ── Sub-components ── */
 
-function FlowStep({ n, icon, title, description, screenshotAlt }: {
+function FlowStep({ n, icon, title, description }: {
   n: number;
   icon: React.ReactNode;
   title: string;
   description: string;
-  screenshotAlt: string;
 }) {
   return (
     <div className="flex flex-col items-center text-center">
