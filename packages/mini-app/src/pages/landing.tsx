@@ -7,25 +7,34 @@ export default function LandingPage() {
 
   return (
     <div className="h-dvh bg-background text-foreground overflow-y-auto">
+      {/* ── Header ── */}
+      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-lg border-b border-border">
+        <div className="flex items-center justify-between px-6 h-14 max-w-5xl mx-auto">
+          <span className="text-[20px] font-extrabold tracking-tight">
+            Хал<span className="text-lime">в</span>а
+          </span>
+          <a
+            href={botUrl}
+            className="inline-flex items-center gap-1.5 bg-lime hover:bg-lime-hover text-[#1C1C1E] h-9 px-4 rounded-full font-semibold text-[14px] active:scale-[0.97] transition-all"
+          >
+            Перейти в бота
+            <ArrowRight className="w-4 h-4" />
+          </a>
+        </div>
+      </header>
+
       {/* ── Hero ── */}
       <section className="px-6 pt-16 pb-12 max-w-xl mx-auto text-center">
         <h1 className="text-[40px] sm:text-[52px] font-extrabold tracking-tight leading-[1.1] mb-4">
           Хал<span className="text-lime">в</span>а
         </h1>
-        <p className="text-[18px] sm:text-[20px] text-muted-foreground leading-relaxed mb-8 max-w-md mx-auto">
-          Обменивайте валюту напрямую среди друзей и участников доверенных групп — без посредников и комиссий
+        <p className="text-[18px] sm:text-[20px] text-muted-foreground leading-relaxed max-w-xl mx-auto">
+          Меняй валюту напрямую среди друзей и участников доверенных групп — без посредников и комиссий
         </p>
-        <a
-          href={botUrl}
-          className="inline-flex items-center justify-center gap-2 bg-lime hover:bg-lime-hover text-[#1C1C1E] h-[56px] px-8 rounded-[20px] font-bold text-[17px] active:scale-[0.98] transition-all shadow-[0_8px_24px_rgba(200,241,53,0.4)]"
-        >
-          Перейти в бота
-          <ArrowRight className="w-5 h-5" />
-        </a>
       </section>
 
       {/* ── 3-Step Flow ── */}
-      <section className="px-6 py-12 max-w-3xl mx-auto">
+      <section className="px-6 py-12 max-w-5xl mx-auto">
         <h2 className="text-[24px] font-bold mb-8 text-center">Три шага к обмену</h2>
         <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
           <FlowStep
@@ -77,17 +86,32 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Footer CTA ── */}
-      <section className="px-6 pt-8 pb-16 max-w-xl mx-auto text-center">
-        <p className="text-muted-foreground text-[15px] mb-4">Готовы попробовать?</p>
-        <a
-          href={botUrl}
-          className="inline-flex items-center justify-center gap-2 bg-lime hover:bg-lime-hover text-[#1C1C1E] h-[56px] px-8 rounded-[20px] font-bold text-[17px] active:scale-[0.98] transition-all shadow-[0_8px_24px_rgba(200,241,53,0.4)]"
-        >
-          Открыть Халву в Telegram
-          <ArrowRight className="w-5 h-5" />
-        </a>
-      </section>
+      {/* ── Footer ── */}
+      <footer className="bg-foreground text-background mt-12">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-6 py-5 max-w-5xl mx-auto text-[13px]">
+          <a
+            href="https://telegra.ph/Halwa-02-27"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="opacity-60 hover:opacity-100 transition-opacity"
+          >
+            Подробнее о проекте
+          </a>
+          <span className="flex items-center gap-1.5 opacity-60">
+            made with
+            <HeartIcon />
+            by{' '}
+            <a
+              href="https://vladabramov.me"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline underline-offset-2 hover:opacity-80 transition-opacity"
+            >
+              Vlad
+            </a>
+          </span>
+        </div>
+      </footer>
     </div>
   );
 }
@@ -120,7 +144,7 @@ function FlowStep({ icon, title, description }: {
         <span className="text-muted-foreground">{icon}</span>
         <h3 className="text-[16px] font-semibold">{title}</h3>
       </div>
-      <p className="text-[14px] text-muted-foreground leading-relaxed max-w-[240px]">{description}</p>
+      <p className="text-[14px] text-muted-foreground leading-relaxed max-w-[240px] md:max-w-none">{description}</p>
     </div>
   );
 }
@@ -134,5 +158,27 @@ function ExplainerItem({ icon, title, text }: { icon: React.ReactNode; title: st
         <p className="text-[14px] text-muted-foreground leading-relaxed">{text}</p>
       </div>
     </div>
+  );
+}
+
+function HeartIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className="w-3.5 h-3.5 text-red-500"
+      style={{ animation: 'heartbeat 1.2s ease-in-out infinite' }}
+    >
+      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+      <style>{`
+        @keyframes heartbeat {
+          0%, 100% { transform: scale(1); }
+          14% { transform: scale(1.3); }
+          28% { transform: scale(1); }
+          42% { transform: scale(1.3); }
+          70% { transform: scale(1); }
+        }
+      `}</style>
+    </svg>
   );
 }
