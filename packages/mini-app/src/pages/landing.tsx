@@ -9,7 +9,7 @@ export default function LandingPage() {
     <div className="h-dvh bg-background text-foreground overflow-y-auto">
       {/* ── Hero ── */}
       <section className="px-6 pt-16 pb-12 max-w-xl mx-auto text-center">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col items-center gap-5 sm:flex-row sm:justify-between mb-8">
           <h1 className="text-[40px] sm:text-[52px] font-extrabold tracking-tight leading-[1.1]">
             Хал<span className="text-accent2">в</span><span>a</span>
           </h1>
@@ -30,7 +30,7 @@ export default function LandingPage() {
       <section className="py-12">
         <h2 className="text-[24px] font-bold mb-8 text-center px-6">Три шага к обмену</h2>
         <div
-          className="flex gap-4 pl-6 pr-6 overflow-x-auto snap-x snap-mandatory sm:overflow-visible sm:snap-none sm:px-6 sm:items-center sm:max-w-5xl sm:mx-auto"
+          className="flex gap-4 px-[5vw] overflow-x-auto snap-x snap-mandatory sm:overflow-visible sm:snap-none sm:px-6 sm:items-center sm:max-w-5xl sm:mx-auto"
           style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
         >
           <FlowStep
@@ -118,7 +118,7 @@ function FlowStep({ icon, title, description }: {
   description: string;
 }) {
   return (
-    <div className="flex flex-col items-center text-center shrink-0 w-[78%] snap-center sm:w-auto sm:shrink sm:snap-align-none sm:flex-1">
+    <div className="flex flex-col items-center text-center shrink-0 w-[90vw] snap-center sm:w-auto sm:shrink sm:snap-align-none sm:flex-1">
       {/* Phone-frame screenshot placeholder */}
       <div className="w-full max-w-[220px] aspect-[9/16] bg-card rounded-[24px] border-2 border-accent flex flex-col items-center justify-center p-4 relative overflow-hidden mb-4">
         {/* Notch */}
