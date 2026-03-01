@@ -1,4 +1,4 @@
-import { ArrowRight, ChevronDown, ChevronRight, Github, Globe, MessageCircle, Repeat, Search, Shield, Users } from 'lucide-react';
+import { ArrowRight, ChevronRight, Github, Globe, MessageCircle, Repeat, Search, Shield, Users } from 'lucide-react';
 
 const BOT_USERNAME = import.meta.env.VITE_BOT_USERNAME || 'halwa_app_bot';
 
@@ -9,9 +9,9 @@ export default function LandingPage() {
     <div className="h-dvh bg-background text-foreground overflow-y-auto">
       {/* ── Hero ── */}
       <section className="px-6 pt-16 pb-12 max-w-xl mx-auto text-center">
-        <div className="flex items-center justify-center gap-4 mb-4">
+        <div className="flex items-center justify-between mb-8">
           <h1 className="text-[40px] sm:text-[52px] font-extrabold tracking-tight leading-[1.1]">
-            Хал<span className="text-lime">в</span>а
+            Хал<span className="text-accent2">в</span><span>a</span>
           </h1>
           <a
             href={botUrl}
@@ -27,22 +27,23 @@ export default function LandingPage() {
       </section>
 
       {/* ── 3-Step Flow ── */}
-      <section className="px-6 py-12 max-w-5xl mx-auto">
-        <h2 className="text-[24px] font-bold mb-8 text-center">Три шага к обмену</h2>
-        <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
+      <section className="py-12">
+        <h2 className="text-[24px] font-bold mb-8 text-center px-6">Три шага к обмену</h2>
+        <div
+          className="flex gap-4 pl-6 pr-6 overflow-x-auto snap-x snap-mandatory sm:overflow-visible sm:snap-none sm:px-6 sm:items-center sm:max-w-5xl sm:mx-auto"
+          style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
+        >
           <FlowStep
             icon={<Search className="w-5 h-5" />}
             title="Создайте заявку"
             description="Укажите какую валюту хотите обменять, на что и в каком объёме."
           />
-          <ChevronDown className="w-5 h-5 text-muted-foreground shrink-0 sm:hidden" />
           <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0 hidden sm:block" />
           <FlowStep
             icon={<Users className="w-5 h-5" />}
             title="Получите мэтч"
             description="Бот найдёт подходящие предложения среди друзей и участников доверенных групп."
           />
-          <ChevronDown className="w-5 h-5 text-muted-foreground shrink-0 sm:hidden" />
           <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0 hidden sm:block" />
           <FlowStep
             icon={<MessageCircle className="w-5 h-5" />}
@@ -117,7 +118,7 @@ function FlowStep({ icon, title, description }: {
   description: string;
 }) {
   return (
-    <div className="flex flex-col items-center text-center flex-1">
+    <div className="flex flex-col items-center text-center shrink-0 w-[78%] snap-center sm:w-auto sm:shrink sm:snap-align-none sm:flex-1">
       {/* Phone-frame screenshot placeholder */}
       <div className="w-full max-w-[220px] aspect-[9/16] bg-card rounded-[24px] border-2 border-accent flex flex-col items-center justify-center p-4 relative overflow-hidden mb-4">
         {/* Notch */}
@@ -166,9 +167,9 @@ function HeartIcon() {
       <style>{`
         @keyframes heartbeat {
           0%, 100% { transform: scale(1); }
-          14% { transform: scale(1.3); }
+          14% { transform: scale(1.15); }
           28% { transform: scale(1); }
-          42% { transform: scale(1.3); }
+          42% { transform: scale(1.15); }
           70% { transform: scale(1); }
         }
       `}</style>
