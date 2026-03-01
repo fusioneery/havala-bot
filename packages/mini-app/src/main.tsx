@@ -52,10 +52,6 @@ function applyTheme() {
 
 applyTheme();
 
-if (!window.Telegram?.WebApp?.initData) {
-  document.documentElement.classList.remove('dark');
-}
-
 window.Telegram?.WebApp?.onEvent?.('themeChanged', applyTheme);
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
 
