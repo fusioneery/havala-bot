@@ -23,6 +23,7 @@ declare global {
           };
         };
         onEvent?: (event: string, callback: () => void) => void;
+        expand?: () => void;
         offEvent?: (event: string, callback: () => void) => void;
         BackButton?: {
           isVisible: boolean;
@@ -52,6 +53,7 @@ function applyTheme() {
 
 applyTheme();
 
+window.Telegram?.WebApp?.expand?.();
 window.Telegram?.WebApp?.onEvent?.('themeChanged', applyTheme);
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
 
