@@ -67,7 +67,7 @@ export const config = {
   rateLimitMonthlyOffers: Number(process.env.RATE_LIMIT_MONTHLY_OFFERS) || 10,
 
   // Cleanup old offers (in days)
-  offerMaxAgeDays: Number(process.env.OFFER_MAX_AGE_DAYS) || 30,
+  offerMaxAgeDays: Number(process.env.OFFER_MAX_AGE_DAYS) || 5,
 
   // Feature flags
   reactToParsedOffers: process.env.REACT_TO_PARSED_OFFERS === 'true' || process.env.REACT_TO_PARSED_OFFERS === '1',
