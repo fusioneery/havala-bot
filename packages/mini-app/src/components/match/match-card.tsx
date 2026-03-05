@@ -68,7 +68,7 @@ export function MatchCard({ match, searchedAt }: MatchCardProps) {
         <div
           className={cn(
             'w-[46px] h-[46px] rounded-full p-[1.5px] border-2 shrink-0',
-            displayTrustType === 'friend' ? 'border-primary' : 'border-muted-foreground/50',
+            displayTrustType === 'friend' ? 'border-accent2' : 'border-muted-foreground/50',
           )}
         >
           <div className="w-full h-full rounded-full bg-accent flex items-center justify-center text-base font-bold text-foreground overflow-hidden">
@@ -93,9 +93,7 @@ export function MatchCard({ match, searchedAt }: MatchCardProps) {
           )}
         </div>
         <div className="shrink-0 text-right text-[13px]">
-          {displayTrustType === 'friend' ? (
-            <span className="font-bold text-accent2">Друг</span>
-          ) : isGroupMessageMatch && telegramMessageLink ? (
+          {displayTrustType === 'friend' ? null : isGroupMessageMatch && telegramMessageLink ? (
             <span className="text-foreground">
               знакомый из{' '}
               <button

@@ -1,4 +1,4 @@
-import { eq, inArray, or } from 'drizzle-orm';
+import { and, eq, inArray, or } from 'drizzle-orm';
 import { Bot, InlineKeyboard } from 'grammy';
 import { config } from './config';
 import { db, schema } from './db';
@@ -605,6 +605,49 @@ bot.callbackQuery(/^match_error:/, async (ctx) => {
     'Напишите, что именно пошло не так. Это поможет нам улучшить бот.',
     { reply_markup: { force_reply: true } },
   );
+});
+
+// /friends — list your friends with their Telegram usernames
+bot.command('friends', async (ctx) => {
+  const user = ctx.from;
+  if (!user || ctx.chat?.type !== 'private') return;
+
+  const [dbUser] = await db
+    .select({ id: schema.users.id })
+    .from(schema.users)
+    .where(eq(schema.users.telegramId, user.id))
+    .limit(1);
+
+  if (!dbUser) {
+    await ctx.reply('Вы ещё не зарегистрированы. Нажмите /start');
+    return;
+  }
+
+  const friends = await db
+    .select({
+      firstName: schema.users.firstName,
+      username: schema.users.username,
+    })
+    .from(schema.trustRelations)
+    .innerJoin(schema.users, eq(schema.trustRelations.targetUserId, schema.users.id))
+    .where(
+      and(
+        eq(schema.trustRelations.userId, dbUser.id),
+        eq(schema.trustRelations.type, 'friend'),
+      ),
+    );
+
+  if (friends.length === 0) {
+    await ctx.reply('У вас пока нет друзей. Перешлите мне сообщение друга или отправьте ему реферальную ссылку.');
+    return;
+  }
+
+  const lines = friends.map((f) => {
+    const name = f.firstName;
+    return f.username ? `${name} — @${f.username}` : name;
+  });
+
+  await ctx.reply(`Ваши друзья (${friends.length}):\n\n${lines.join('\n')}`);
 });
 
 // /deleteaccount — permanently delete all data and self-ban

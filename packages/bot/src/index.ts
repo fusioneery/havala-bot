@@ -69,6 +69,7 @@ async function main() {
   // Register bot commands in Telegram menu
   await bot.api.setMyCommands([
     { command: 'start', description: 'Начать работу с ботом' },
+    { command: 'friends', description: 'Список друзей' },
     { command: 'deleteaccount', description: 'Удалить аккаунт навсегда' },
   ]);
 

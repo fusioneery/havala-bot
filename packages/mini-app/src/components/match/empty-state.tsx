@@ -37,7 +37,7 @@ export function EmptyState({ offerText, allSwiped, onReset }: EmptyStateProps) {
             <Bell className="w-7 h-7 text-muted-foreground" />
           </div>
           <h2 className="text-[20px] font-bold text-foreground mb-2">
-            Подходящих предложений нет
+            Мэтчей нет, но мы напишем
           </h2>
           <p className="text-[15px] text-muted-foreground mb-8 max-w-[280px]">
             Бот напишет вам в ЛС, когда появится подходящая заявка

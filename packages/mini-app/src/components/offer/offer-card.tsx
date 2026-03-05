@@ -5,6 +5,7 @@ import {
   hasCryptoIcon,
   hasFlagIcon,
 } from '@/components/order/currency-icons';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useDealCode } from '@/hooks/use-deal-code';
 import { apiFetch } from '@/lib/api';
 import { buildDmUrl, cn, getGroupLink, openTelegramLink } from '@/lib/utils';
@@ -16,7 +17,6 @@ import {
   type PaymentMethodGroup,
   type TrustType,
 } from '@hawala/shared';
-import { Skeleton } from '@/components/ui/skeleton';
 import { ChevronUp, MessageCircle, UserCheck, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -106,7 +106,7 @@ function MatchRow({ match, compact = false, dealCode }: MatchRowProps) {
         className={cn(
           'rounded-full p-[4px] border shrink-0',
           compact ? 'w-[38px] h-[38px]' : 'w-[47px] h-[47px] p-[5px]',
-          displayTrustType === 'friend' ? 'border-primary' : 'border-muted-foreground/50',
+          displayTrustType === 'friend' ? 'border-accent2' : 'border-muted-foreground/50',
         )}
       >
         <div className="w-full h-full rounded-full bg-accent flex items-center justify-center text-sm font-bold text-foreground overflow-hidden">
@@ -322,7 +322,7 @@ export function OfferCard({ offer, onCancel }: OfferCardProps) {
                 <div
                   className={cn(
                     'w-[47px] h-[47px] rounded-full p-[5px] border shrink-0',
-                    displayTrustType === 'friend' ? 'border-primary' : 'border-muted-foreground/50',
+                    displayTrustType === 'friend' ? 'border-accent2' : 'border-muted-foreground/50',
                   )}
                 >
                   <div className="w-full h-full rounded-full bg-accent flex items-center justify-center text-sm font-bold text-foreground overflow-hidden">
@@ -338,7 +338,7 @@ export function OfferCard({ offer, onCancel }: OfferCardProps) {
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center gap-0.5 flex-wrap">
                     <span className="text-[15px] font-semibold text-foreground truncate">
                       {offer.topMatch.author.firstName}
                     </span>
