@@ -54,11 +54,13 @@ export default function MatchesPage() {
 
   return (
     <div className="w-full h-dvh flex flex-col bg-background text-foreground">
-      <header className="px-5 pt-2.5 pb-4">
-        <h1 className="text-[17px] font-semibold tracking-tight">
-          {hasMatches ? `Мэтчи (${data.matches.length})` : 'Результаты'}
-        </h1>
-      </header>
+      {hasMatches && (
+        <header className="px-5 pt-2.5 pb-4">
+          <h1 className="text-[17px] font-semibold tracking-tight">
+            Мэтчи ({data.matches.length})
+          </h1>
+        </header>
+      )}
 
       {/* Content */}
       <main className="flex-1 overflow-y-auto no-scrollbar px-4 pb-8">

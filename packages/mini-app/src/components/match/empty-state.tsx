@@ -1,3 +1,4 @@
+import { useTrustedGroups } from '@/hooks/use-trusted-groups';
 import { openTelegramLink } from '@/lib/utils';
 import { Bell, Send } from 'lucide-react';
 
@@ -9,7 +10,8 @@ interface EmptyStateProps {
 }
 
 export function EmptyState({ offerText, allSwiped, onReset }: EmptyStateProps) {
-  const shareUrl = `https://t.me/share/url?text=${encodeURIComponent(offerText)}`;
+  const { groups } = useTrustedGroups();
+  const firstGroup = groups[0];
 
   return (
     <div className="flex flex-col items-center justify-center px-6 pt-10 text-center">
@@ -45,13 +47,15 @@ export function EmptyState({ offerText, allSwiped, onReset }: EmptyStateProps) {
         </>
       )}
 
-      <button
-        onClick={() => openTelegramLink(shareUrl)}
-        className="w-full bg-primary text-primary-foreground h-[56px] rounded-[24px] font-bold text-[17px] flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-lg"
-      >
-        <Send className="w-5 h-5" />
-        Написать ещё в группу
-      </button>
+      {firstGroup && (
+        <button
+          onClick={() => openTelegramLink(firstGroup.link)}
+          className="w-full bg-primary text-primary-foreground h-[56px] rounded-[24px] font-bold text-[17px] flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-lg"
+        >
+          <Send className="w-5 h-5" />
+          Написать ещё в группу
+        </button>
+      )}
     </div>
   );
 }
