@@ -1,14 +1,7 @@
 # syntax=docker/dockerfile:1
 
-# =============================================================================
-# Halwa Bot - Multi-stage Dockerfile
-# Works with: Docker, Docker Compose, Railway, Coolify
-# =============================================================================
-
-# =============================================================================
-# Builder stage - install dependencies and build
-# =============================================================================
-FROM oven/bun:1 AS builder
+# Single-stage build — avoids bun workspace symlink issues with multi-stage COPY
+FROM oven/bun:1-slim
 WORKDIR /app
 
 # Copy everything (filtered by .dockerignore)
@@ -19,52 +12,18 @@ COPY . .
 RUN bun install --frozen-lockfile --ignore-scripts \
     && cd packages/mini-app && bun run vite build
 
-# Remove dev dependencies, source files, and unnecessary files
+# Clean up dev artifacts not needed at runtime
 RUN rm -rf packages/mini-app/src packages/mini-app/public packages/mini-app/*.config.* \
     && rm -rf .git .github .vscode .cursor .dmux-hooks \
     && rm -rf *.md docs
 
-# =============================================================================
-# Production stage - minimal runtime image
-# =============================================================================
-FROM oven/bun:1-slim AS production
+# Create data directory for SQLite
+RUN mkdir -p /app/data
 
-# Labels for container metadata
-LABEL org.opencontainers.image.title="Halwa Bot"
-LABEL org.opencontainers.image.description="Telegram bot for P2P currency exchange matching"
-LABEL org.opencontainers.image.source="https://github.com/fusioneery/hawala-bot"
-
-WORKDIR /app
-
-# Create non-root user for security
-# Use groupadd/useradd (shadow-utils) — addgroup/adduser not available in bun:1-slim
-RUN groupadd --system --gid 1001 hawala \
-    && useradd --system --uid 1001 --gid hawala --no-create-home hawala
-
-# Install gosu for privilege dropping in entrypoint
-# (needed because Railway volume mounts override filesystem permissions)
-RUN apt-get update && apt-get install -y --no-install-recommends gosu \
-    && rm -rf /var/lib/apt/lists/*
-
-# Create data directory for SQLite with proper permissions
-RUN mkdir -p /app/data && chown -R hawala:hawala /app/data
-
-# Copy built application from builder stage
-COPY --from=builder --chown=hawala:hawala /app/node_modules node_modules
-COPY --from=builder --chown=hawala:hawala /app/packages packages
-COPY --from=builder --chown=hawala:hawala /app/package.json .
-
-# Set environment variables
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV DB_FILE_NAME=/app/data/hawala.db
 
-# Expose port (configurable via PORT env var, but 3000 is default)
 EXPOSE 3000
 
-# No HEALTHCHECK in Dockerfile — Railway handles it via config
-
-# Entrypoint fixes volume permissions and drops to non-root user via gosu
-COPY --chmod=755 entrypoint.sh /app/entrypoint.sh
-ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["bun", "packages/bot/src/index.ts"]
