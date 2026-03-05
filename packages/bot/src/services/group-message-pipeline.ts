@@ -21,6 +21,9 @@ interface BufferedGroupMessage {
 interface PersistedOffer {
   id: number;
   authorId: number;
+  authorUsername?: string;
+  authorFirstName: string;
+  groupName: string;
   groupId: number;
   fromCurrency: string;
   toCurrency: string;
@@ -45,8 +48,10 @@ interface MatchCandidate {
   paymentMethods: string;
 }
 
+type InlineButton = { text: string; callback_data: string } | { text: string; url: string };
+
 interface MatchNotificationKeyboard {
-  inline_keyboard: Array<Array<{ text: string; callback_data: string }>>;
+  inline_keyboard: InlineButton[][];
 }
 
 interface GroupMessagePipelineOptions {
@@ -421,6 +426,9 @@ export class GroupMessagePipeline {
     return {
       id: insertedOffer.id,
       authorId: insertedOffer.authorId,
+      authorUsername: source.authorUsername ?? undefined,
+      authorFirstName: source.authorFirstName || 'Unknown',
+      groupName: source.chatTitle || String(source.chatId),
       groupId: trustedGroup.id,
       fromCurrency,
       toCurrency,
@@ -715,7 +723,7 @@ export class GroupMessagePipeline {
         .returning({ id: schema.matches.id });
 
       const text = this.buildMatchNotificationText(offer);
-      const keyboard = this.buildMatchResultKeyboard(insertedMatch.id);
+      const keyboard = this.buildMatchResultKeyboard(insertedMatch.id, offer);
 
       void debugLog('🎯', 'Мэтч найден', {
         matchId: insertedMatch.id,
@@ -793,17 +801,21 @@ export class GroupMessagePipeline {
     ].join('\n');
   }
 
-  private buildMatchResultKeyboard(matchId: number): MatchNotificationKeyboard {
-    return {
-      inline_keyboard: [
-        [
-          { text: '✅ Успешно поменялся', callback_data: `match_success:${matchId}` },
-        ],
-        [
-          { text: '❌ Неуспех / ошибка', callback_data: `match_error:${matchId}` },
-        ],
-      ],
-    };
+  private buildMatchResultKeyboard(matchId: number, offer: PersistedOffer): MatchNotificationKeyboard {
+    const rows: MatchNotificationKeyboard['inline_keyboard'] = [];
+
+    if (offer.authorUsername) {
+      const dmText = `Привет! Нашёл твою заявку на обмен ${offer.fromCurrency} → ${offer.toCurrency} в «${offer.groupName}»`;
+      const url = `https://t.me/${offer.authorUsername}?text=${encodeURIComponent(dmText)}`;
+      rows.push([{ text: '💬 Перейти в личку', url }]);
+    }
+
+    rows.push(
+      [{ text: '✅ Успешно поменялся', callback_data: `match_success:${matchId}` }],
+      [{ text: '❌ Неуспех / ошибка', callback_data: `match_error:${matchId}` }],
+    );
+
+    return { inline_keyboard: rows };
   }
 
   private buildTelegramMessageLink(
