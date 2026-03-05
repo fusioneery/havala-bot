@@ -17,7 +17,7 @@ COPY . .
 # Install dependencies and build mini-app
 # --ignore-scripts: skip better-sqlite3 native build (devDep for drizzle-kit only; runtime uses bun:sqlite)
 RUN bun install --frozen-lockfile --ignore-scripts \
-    && cd packages/mini-app && bun run --bun vite build
+    && cd packages/mini-app && bun run vite build
 
 # Remove dev dependencies, source files, and unnecessary files
 RUN rm -rf packages/mini-app/src packages/mini-app/public packages/mini-app/*.config.* \
