@@ -1,3 +1,4 @@
+import { openTelegramLink } from '@/lib/utils';
 import { Bell, Send } from 'lucide-react';
 
 interface EmptyStateProps {
@@ -44,15 +45,13 @@ export function EmptyState({ offerText, allSwiped, onReset }: EmptyStateProps) {
         </>
       )}
 
-      <a
-        href={shareUrl}
-        target="_blank"
-        rel="noopener noreferrer"
+      <button
+        onClick={() => openTelegramLink(shareUrl)}
         className="w-full bg-primary text-primary-foreground h-[56px] rounded-[24px] font-bold text-[17px] flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-lg"
       >
         <Send className="w-5 h-5" />
         Написать ещё в группу
-      </a>
+      </button>
     </div>
   );
 }
