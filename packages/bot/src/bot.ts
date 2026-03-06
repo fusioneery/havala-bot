@@ -281,6 +281,18 @@ bot.command('start', async (ctx) => {
 
         // Don't add yourself as friend
         if (currentUser && referrer && referrer.telegramId !== user.id) {
+          // Check if friendship already exists
+          const [existingFriendship] = await db
+            .select({ userId: schema.trustRelations.userId })
+            .from(schema.trustRelations)
+            .where(
+              and(
+                eq(schema.trustRelations.userId, currentUser.id),
+                eq(schema.trustRelations.targetUserId, referrer.id),
+              ),
+            )
+            .limit(1);
+
           // Create mutual friendship (both directions)
           await db
             .insert(schema.trustRelations)
@@ -294,8 +306,8 @@ bot.command('start', async (ctx) => {
 
           referrerUser = referrer;
 
-          // Notify referrer that their friend joined
-          if (referrer.notifyOnFriendAdd) {
+          // Notify referrer only if this is a NEW friendship
+          if (!existingFriendship && referrer.notifyOnFriendAdd) {
             try {
               const keyboard = new InlineKeyboard()
                 .webApp('Создать заявку', config.miniAppUrl)
