@@ -8,6 +8,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDealCode } from '@/hooks/use-deal-code';
 import { apiFetch } from '@/lib/api';
+import { useI18n } from '@/lib/i18n';
 import { buildDmUrl, cn, getGroupLink, openTelegramLink } from '@/lib/utils';
 import {
   getDefaultPaymentMethods,
@@ -19,13 +20,6 @@ import {
 } from '@hawala/shared';
 import { ChevronUp, MessageCircle, UserCheck, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
-
-const PILL_LABELS: Record<PaymentMethodGroup, string> = {
-  russian_banks: 'СБП',
-  local_banks: 'Местные банки',
-  swift: 'SWIFT / SEPA',
-  crypto: 'Крипта',
-};
 
 interface OfferCardProps {
   offer: MyOfferItem;
@@ -50,17 +44,17 @@ function CurrencyIcon({ code, size }: { code: string; size: number }) {
   );
 }
 
-function relativeTime(dateStr: string): string {
+function relativeTime(dateStr: string, lang: 'ru' | 'en'): string {
   const now = Date.now();
   const created = new Date(dateStr).getTime();
   const diffMs = now - created;
   const diffMin = Math.floor(diffMs / 60_000);
 
-  if (diffMin < 1) return 'только что';
-  if (diffMin < 60) return `${diffMin} мин. назад`;
+  if (diffMin < 1) return lang === 'ru' ? 'только что' : 'just now';
+  if (diffMin < 60) return lang === 'ru' ? `${diffMin} мин. назад` : `${diffMin} min ago`;
   const diffHours = Math.floor(diffMin / 60);
-  if (diffHours < 24) return `${diffHours} ч. назад`;
-  return 'вчера';
+  if (diffHours < 24) return lang === 'ru' ? `${diffHours} ч. назад` : `${diffHours} h ago`;
+  return lang === 'ru' ? 'вчера' : 'yesterday';
 }
 
 function getMethodsForCurrency(
@@ -72,7 +66,8 @@ function getMethodsForCurrency(
   return getDefaultPaymentMethods(currency);
 }
 
-function pluralMatch(n: number): string {
+function pluralMatch(n: number, lang: 'ru' | 'en'): string {
+  if (lang === 'en') return n === 1 ? 'match' : 'matches';
   if (n % 100 >= 11 && n % 100 <= 19) return 'мэтчей';
   switch (n % 10) {
     case 1: return 'мэтч';
@@ -88,6 +83,10 @@ interface MatchRowProps {
 }
 
 function MatchRow({ match, compact = false, dealCode }: MatchRowProps) {
+  const { lang } = useI18n();
+  const copy = lang === 'ru'
+    ? { friend: 'Друг', fromGroup: 'знакомый из ', fromHalwa: 'знакомый из Халвы', write: 'Написать' }
+    : { friend: 'Friend', fromGroup: 'acquaintance from ', fromHalwa: 'acquaintance from Halwa', write: 'Message' };
   const displayTrustType: TrustType | null = match.trustType ?? 'acquaintance';
   const isGroupMessageMatch =
     (match.matchSource ?? (match.telegramMessageLink ? 'group_message' : 'hawala')) === 'group_message';
@@ -97,6 +96,7 @@ function MatchRow({ match, compact = false, dealCode }: MatchRowProps) {
     telegramMessageLink: match.telegramMessageLink,
     matchSource: match.matchSource,
     dealCode,
+    lang,
   });
 
   return (
@@ -134,11 +134,11 @@ function MatchRow({ match, compact = false, dealCode }: MatchRowProps) {
           {displayTrustType === 'friend' ? (
             <span className="inline-flex items-center gap-1 font-bold text-foreground">
               <UserCheck className="w-3.5 h-3.5 text-accent2 shrink-0" />
-              Друг
+              {copy.friend}
             </span>
           ) : isGroupMessageMatch && match.telegramMessageLink ? (
             <span className="text-muted-foreground">
-              знакомый из{' '}
+              {copy.fromGroup}
               <button
                 onClick={() => openTelegramLink(getGroupLink(match.telegramMessageLink!))}
                 className="text-foreground hover:underline"
@@ -147,7 +147,7 @@ function MatchRow({ match, compact = false, dealCode }: MatchRowProps) {
               </button>
             </span>
           ) : (
-            <span className="text-muted-foreground">знакомый из Халвы</span>
+            <span className="text-muted-foreground">{copy.fromHalwa}</span>
           )}
         </div>
       </div>
@@ -159,7 +159,7 @@ function MatchRow({ match, compact = false, dealCode }: MatchRowProps) {
           className="h-8 px-3 rounded-full bg-primary text-primary-foreground text-[12px] font-semibold flex items-center gap-1 active:scale-95 transition shrink-0"
         >
           <MessageCircle className="w-3 h-3" />
-          Написать
+          {copy.write}
         </button>
       )}
     </div>
@@ -168,6 +168,41 @@ function MatchRow({ match, compact = false, dealCode }: MatchRowProps) {
 
 export function OfferCard({ offer, onCancel }: OfferCardProps) {
   const dealCode = useDealCode();
+  const { lang, locale } = useI18n();
+  const pillLabels: Record<PaymentMethodGroup, string> = lang === 'ru'
+    ? {
+        russian_banks: 'СБП',
+        local_banks: 'Местные банки',
+        swift: 'SWIFT / SEPA',
+        crypto: 'Крипта',
+      }
+    : {
+        russian_banks: 'SBP',
+        local_banks: 'Local banks',
+        swift: 'SWIFT / SEPA',
+        crypto: 'Crypto',
+      };
+  const copy = lang === 'ru'
+    ? {
+        only: 'только',
+        or: 'или',
+        friend: 'Друг',
+        fromGroup: 'знакомый из ',
+        fromHalwa: 'знакомый из Халвы',
+        write: 'Написать',
+        hideMatches: 'Скрыть остальные мэтчи',
+        waiting: 'Пока нет мэтчей — напишем, когда появятся',
+      }
+    : {
+        only: 'only',
+        or: 'or',
+        friend: 'Friend',
+        fromGroup: 'acquaintance from ',
+        fromHalwa: 'acquaintance from Halwa',
+        write: 'Message',
+        hideMatches: 'Hide other matches',
+        waiting: 'No matches yet. We will message you when one appears.',
+      };
   const displayTrustType: TrustType | null = offer.topMatch
     ? offer.topMatch.trustType ?? 'acquaintance'
     : null;
@@ -213,6 +248,7 @@ export function OfferCard({ offer, onCancel }: OfferCardProps) {
         telegramMessageLink: offer.topMatch.telegramMessageLink,
         matchSource: offer.topMatch.matchSource,
         dealCode,
+        lang,
       })
     : null;
 
@@ -239,14 +275,14 @@ export function OfferCard({ offer, onCancel }: OfferCardProps) {
           </div>
           <div>
             <div className="text-[16px] font-semibold text-foreground">
-              {offer.amount.toLocaleString('ru-RU').replace(',', '.')} {offer.fromCurrency} → {offer.toCurrency}
+              {offer.amount.toLocaleString(locale).replace(',', '.')} {offer.fromCurrency} → {offer.toCurrency}
             </div>
             <div className="text-[13px] text-muted-foreground">
               {convertedAmount !== null ? (
                 <>
                   ≈ {convertedAmount >= 100
-                    ? Math.round(convertedAmount).toLocaleString('ru-RU')
-                    : convertedAmount.toLocaleString('ru-RU', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}{' '}
+                    ? Math.round(convertedAmount).toLocaleString(locale)
+                    : convertedAmount.toLocaleString(locale, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}{' '}
                   {offer.toCurrency}
                 </>
               ) : (
@@ -254,7 +290,7 @@ export function OfferCard({ offer, onCancel }: OfferCardProps) {
               )}
             </div>
             <div className="text-[13px] text-muted-foreground">
-              {relativeTime(offer.createdAt)}
+              {relativeTime(offer.createdAt, lang)}
             </div>
           </div>
         </div>
@@ -273,15 +309,15 @@ export function OfferCard({ offer, onCancel }: OfferCardProps) {
           {fromMethods.length > 0 && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent text-muted-foreground text-[11px] font-medium">
               <span className="text-foreground font-normal">{offer.fromCurrency}</span>
-              {fromMethods.length === 1 && <span className="text-accent2">только</span>}
-              {fromMethods.map((m) => PILL_LABELS[m]).join(' или ')}
+              {fromMethods.length === 1 && <span className="text-accent2">{copy.only}</span>}
+              {fromMethods.map((m) => pillLabels[m]).join(` ${copy.or} `)}
             </span>
           )}
           {toMethods.length > 0 && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent text-muted-foreground text-[11px] font-medium">
               <span className="text-foreground font-normal">{offer.toCurrency}</span>
-              {toMethods.length === 1 && <span className="text-accent2">только</span>}
-              {toMethods.map((m) => PILL_LABELS[m]).join(' или ')}
+              {toMethods.length === 1 && <span className="text-accent2">{copy.only}</span>}
+              {toMethods.map((m) => pillLabels[m]).join(` ${copy.or} `)}
             </span>
           )}
         </div>
@@ -364,11 +400,11 @@ export function OfferCard({ offer, onCancel }: OfferCardProps) {
                   {displayTrustType === 'friend' ? (
                     <span className="inline-flex items-center gap-1.5 font-bold text-foreground">
                       <UserCheck className="w-4 h-4 text-accent2 shrink-0" />
-                      Друг
+                      {copy.friend}
                     </span>
                   ) : offer.topMatch.telegramMessageLink ? (
                     <span className="text-muted-foreground">
-                      знакомый из{' '}
+                      {copy.fromGroup}
                       <button
                         onClick={() => openTelegramLink(getGroupLink(offer.topMatch!.telegramMessageLink!))}
                         className="text-foreground hover:underline"
@@ -377,7 +413,7 @@ export function OfferCard({ offer, onCancel }: OfferCardProps) {
                       </button>
                     </span>
                   ) : (
-                    <span className="text-muted-foreground">знакомый из Халвы</span>
+                    <span className="text-muted-foreground">{copy.fromHalwa}</span>
                   )}
                 </div>
                 {dmUrl && (
@@ -386,7 +422,7 @@ export function OfferCard({ offer, onCancel }: OfferCardProps) {
                     className="h-9 px-4 rounded-full bg-primary text-primary-foreground text-[13px] font-semibold flex items-center gap-1.5 active:scale-95 transition shrink-0"
                   >
                     <MessageCircle className="w-3.5 h-3.5" />
-                    Написать
+                    {copy.write}
                   </button>
                 )}
               </div>
@@ -399,7 +435,7 @@ export function OfferCard({ offer, onCancel }: OfferCardProps) {
               onClick={() => setShowAllMatches(true)}
               className="mt-3 w-full flex items-center justify-center text-[13px] text-muted-foreground hover:text-foreground transition-colors py-0.5"
             >
-              +{extraMatchCount} {pluralMatch(extraMatchCount)}
+              +{extraMatchCount} {pluralMatch(extraMatchCount, lang)}
             </button>
           )}
 
@@ -417,7 +453,7 @@ export function OfferCard({ offer, onCancel }: OfferCardProps) {
                   className="w-full flex items-center justify-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <ChevronUp className="w-3.5 h-3.5" />
-                  Скрыть остальные мэтчи
+                  {copy.hideMatches}
                 </button>
               </div>
             </div>
@@ -428,7 +464,7 @@ export function OfferCard({ offer, onCancel }: OfferCardProps) {
       {/* No matches */}
       {offer.matchCount === 0 && (
         <div className="text-[14px] text-muted-foreground">
-          Пока нет мэтчей — напишем, когда появятся
+          {copy.waiting}
         </div>
       )}
     </div>

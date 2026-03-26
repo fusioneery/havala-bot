@@ -1,5 +1,6 @@
 import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useI18n } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { HelpCircle } from 'lucide-react';
 import { useState } from 'react';
@@ -25,7 +26,27 @@ export function RateSelector({
   googleRate,
   loading,
 }: RateSelectorProps) {
+  const { lang } = useI18n();
   const [showHelp, setShowHelp] = useState(false);
+  const copy = lang === 'ru'
+    ? {
+        equilibrium: 'Равновесный',
+        custom: 'Свой курс',
+        placeholder: 'Введите курс',
+        title: 'Равновесный курс',
+        text1: 'Это ',
+        text1Tail: ', который учитывает разницу между «гугловским» курсом доллара и реальными курсами криптообменников. Зачастую она доходит до 2 рублей.',
+        text2: 'Это справедливая середина между тем, что показывает Google, и тем, что предлагают обменники на практике.',
+      }
+    : {
+        equilibrium: 'Balanced',
+        custom: 'Custom rate',
+        placeholder: 'Enter rate',
+        title: 'Balanced rate',
+        text1: 'This is ',
+        text1Tail: ', which accounts for the difference between the Google dollar rate and real crypto exchanger rates. It can often reach about 2 RUB.',
+        text2: 'It is a fair midpoint between what Google shows and what exchangers actually offer.',
+      };
 
   if (loading) {
     return (
@@ -48,9 +69,9 @@ export function RateSelector({
     label: string;
     rate: number | null;
   }> = [
-    { value: 'vas3k', label: 'Равновесный', rate: vas3kRate },
+    { value: 'vas3k', label: copy.equilibrium, rate: vas3kRate },
     { value: 'google', label: 'Google', rate: googleRate },
-    { value: 'custom', label: 'Свой курс', rate: null },
+    { value: 'custom', label: copy.custom, rate: null },
   ];
 
   return (
@@ -121,16 +142,16 @@ export function RateSelector({
             value={customRate}
             onChange={(e) => onCustomRateChange(e.target.value.replace(/[^\d.]/g, ''))}
             className="flex-1 h-12 px-4 text-[18px] font-bold bg-card border border-border rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-foreground"
-            placeholder="Введите курс"
+            placeholder={copy.placeholder}
           />
           <span className="text-[15px] text-muted-foreground">₽</span>
         </div>
       )}
 
       <BottomSheet open={showHelp} onClose={() => setShowHelp(false)}>
-        <h3 className="text-[18px] font-bold text-foreground mb-3">Равновесный курс</h3>
+        <h3 className="text-[18px] font-bold text-foreground mb-3">{copy.title}</h3>
         <p className="text-[15px] text-muted-foreground leading-relaxed mb-3">
-          Это{' '}
+          {copy.text1}
           <a
             href="https://kurs.vas3k.club"
             target="_blank"
@@ -139,10 +160,10 @@ export function RateSelector({
           >
             Вастрик.Курс
           </a>
-          , который учитывает разницу между «гугловским» курсом доллара и реальными курсами криптообменников. Зачастую она доходит до 2 рублей.
+          {copy.text1Tail}
         </p>
         <p className="text-[15px] text-muted-foreground leading-relaxed">
-          Это справедливая середина между тем, что показывает Google, и тем, что предлагают обменники на практике.
+          {copy.text2}
         </p>
       </BottomSheet>
     </div>
@@ -170,6 +191,10 @@ export function MarketRateSelector({
   toCurrency,
   loading,
 }: MarketRateSelectorProps) {
+  const { lang } = useI18n();
+  const copy = lang === 'ru'
+    ? { market: 'Рыночный', custom: 'Свой курс', unavailable: '(недоступен)', placeholder: 'Введите курс' }
+    : { market: 'Market', custom: 'Custom rate', unavailable: '(unavailable)', placeholder: 'Enter rate' };
   if (loading) {
     return (
       <div className="px-1 flex flex-col gap-2">
@@ -199,11 +224,11 @@ export function MarketRateSelector({
   }> = [
     { 
       value: 'market', 
-      label: 'Рыночный', 
+      label: copy.market, 
       rate: marketRate,
       disabled: marketRate === null,
     },
-    { value: 'custom', label: 'Свой курс', rate: null },
+    { value: 'custom', label: copy.custom, rate: null },
   ];
 
   return (
@@ -249,7 +274,7 @@ export function MarketRateSelector({
                   <span className="text-[16px] font-medium text-foreground">
                     {option.label}
                     {option.value === 'market' && marketRate === null && (
-                      <span className="text-muted-foreground text-[14px] ml-1.5">(недоступен)</span>
+                      <span className="text-muted-foreground text-[14px] ml-1.5">{copy.unavailable}</span>
                     )}
                   </span>
                 </div>
@@ -273,7 +298,7 @@ export function MarketRateSelector({
             value={customRate}
             onChange={(e) => onCustomRateChange(e.target.value.replace(/[^\d.]/g, ''))}
             className="flex-1 h-12 text-right max-w-30 px-4 text-[18px] font-bold bg-card border border-border rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-foreground"
-            placeholder="Введите курс"
+            placeholder={copy.placeholder}
           />
           <span className="text-[15px] text-muted-foreground">{toCurrency}</span>
         </div>

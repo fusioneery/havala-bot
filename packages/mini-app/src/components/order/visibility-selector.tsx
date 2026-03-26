@@ -2,13 +2,14 @@ import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { GroupTooltip } from '@/components/ui/group-tooltip';
 import { useTrustedGroups } from '@/hooks/use-trusted-groups';
 import { apiFetch } from '@/lib/api';
+import { useI18n } from '@/lib/i18n';
 import { cn, openTelegramLink } from '@/lib/utils';
 import type { ContactListItem, Visibility } from '@hawala/shared';
 import { ChevronRight, CircleHelp, Users } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-function useInviteFriend() {
+function useInviteFriend(shareText: string) {
   const [inviting, setInviting] = useState(false);
 
   const handleInviteFriend = useCallback(async () => {
@@ -19,7 +20,6 @@ function useInviteFriend() {
       if (!res.ok) throw new Error('Failed to get invite link');
       const { link } = await res.json();
 
-      const shareText = 'Добавь меня в Халве! Это бот для быстрого обмена деньгами среди тех, кому ты доверяешь.';
       const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(shareText)}`;
       openTelegramLink(shareUrl);
     } catch (err) {
@@ -27,7 +27,7 @@ function useInviteFriend() {
     } finally {
       setInviting(false);
     }
-  }, [inviting]);
+  }, [inviting, shareText]);
 
   return { handleInviteFriend, inviting };
 }
@@ -37,24 +37,52 @@ interface VisibilitySelectorProps {
   onChange: (value: Visibility) => void;
 }
 
-const options: Array<{
-  value: Visibility;
-  label: string;
-}> = [
-  {
-    value: 'friends_and_acquaintances',
-    label: 'Друзья и знакомые',
-  },
-  {
-    value: 'friends_only',
-    label: 'Только друзья',
-  },
-];
-
 export function VisibilitySelector({ value, onChange }: VisibilitySelectorProps) {
   const navigate = useNavigate();
   const { groups } = useTrustedGroups();
-  const { handleInviteFriend, inviting } = useInviteFriend();
+  const { lang } = useI18n();
+  const copy = lang === 'ru'
+    ? {
+        shareText: 'Добавь меня в Халве! Это бот для быстрого обмена деньгами среди тех, кому ты доверяешь.',
+        friendsAndAcquaintances: 'Друзья и знакомые',
+        friendsOnly: 'Только друзья',
+        faq: 'В чём разница?',
+        faqText1: 'При выборе "Друзья и знакомые" поиск будет осуществляться среди всех сообщений в ',
+        trustedGroup: 'доверенной группе',
+        faqText1Tail: ', где состоит бот.',
+        faqText2: 'При выборе "Только друзья" ищем подходящие заявки только среди тех пользователей, которых вы добавили в список друзей самостоятельно.',
+        howToAddFriends: 'Как добавлять друзей',
+        sendInvite: 'Отправьте приглашение в Халву',
+        guideText1: 'Когда он перейдёт по пригласительной ссылке, вы автоматически появитесь в списках друзей друг у друга.',
+        guideText2: 'Ещё можно переслать любое сообщение друга прямо в личку боту — этого достаточно, чтобы он появился в списке друзей.',
+        noFriendsTitle: 'Вы не добавили друзей',
+        noFriendsText: 'При поиске только среди друзей вы никого не найдёте. Сначала добавьте друзей или выберите опцию "Друзья и знакомые", чтобы искать среди сообщений знакомых в доверенной группе.',
+        searchAcquaintances: 'Искать среди знакомых тоже',
+        addFriends: 'Добавить друзей',
+      }
+    : {
+        shareText: 'Add me on Halwa. It is a bot for quick money exchange among people you trust.',
+        friendsAndAcquaintances: 'Friends and acquaintances',
+        friendsOnly: 'Only friends',
+        faq: 'What is the difference?',
+        faqText1: 'With "Friends and acquaintances", the search runs across all messages in the ',
+        trustedGroup: 'trusted group',
+        faqText1Tail: ' where the bot is present.',
+        faqText2: 'With "Only friends", matching only looks through users you added to your friends list yourself.',
+        howToAddFriends: 'How to add friends',
+        sendInvite: 'Send a Halwa invite',
+        guideText1: 'When they follow the invitation link, you will automatically appear in each other’s friends lists.',
+        guideText2: 'You can also forward any message from a friend directly to the bot in a private chat. That is enough to add them to your friends list.',
+        noFriendsTitle: 'You have not added friends',
+        noFriendsText: 'If you search only among friends, you will not find anyone. Add friends first or choose "Friends and acquaintances" to search among acquaintance messages in a trusted group.',
+        searchAcquaintances: 'Search among acquaintances too',
+        addFriends: 'Add friends',
+      };
+  const { handleInviteFriend, inviting } = useInviteFriend(copy.shareText);
+  const options: Array<{ value: Visibility; label: string }> = [
+    { value: 'friends_and_acquaintances', label: copy.friendsAndAcquaintances },
+    { value: 'friends_only', label: copy.friendsOnly },
+  ];
   const [faqOpen, setFaqOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
   const faqContentRef = useRef<HTMLDivElement>(null);
@@ -160,7 +188,7 @@ export function VisibilitySelector({ value, onChange }: VisibilitySelectorProps)
               faqOpen && 'rotate-90',
             )}
           />
-          <span>В чём разница?</span>
+          <span>{copy.faq}</span>
         </button>
         <div
           ref={faqContentRef}
@@ -171,19 +199,19 @@ export function VisibilitySelector({ value, onChange }: VisibilitySelectorProps)
         >
           <div className="pt-3 pb-1 pl-6 pr-2 flex flex-col gap-2">
             <p className="text-muted-foreground text-[14px] leading-relaxed">
-              При выборе "Друзья и знакомые" поиск будет осуществляться среди всех сообщений в{' '}
+              {copy.faqText1}
               <GroupTooltip groups={groups} className="decoration-muted-foreground/50">
-                доверенной группе
+                {copy.trustedGroup}
               </GroupTooltip>
-              , где состоит бот.
+              {copy.faqText1Tail}
             </p>
             <p className="text-muted-foreground text-[14px] leading-relaxed">
-            При выборе "Только друзья" ищем подходящие заявки только среди тех пользователей, которых вы добавили в список друзей самостоятельно.             <span
+            {copy.faqText2} <span
               onClick={() => setGuideOpen(true)}
               className="inline-flex items-center gap-1 text-muted-foreground text-[14px] leading-relaxed hover:text-foreground transition underline"
             >
               <CircleHelp className="w-3.5 h-3.5 shrink-0" />
-              Как добавлять друзей
+              {copy.howToAddFriends}
               
             </span>
             </p>
@@ -194,7 +222,7 @@ export function VisibilitySelector({ value, onChange }: VisibilitySelectorProps)
 
       <BottomSheet open={guideOpen} onClose={() => setGuideOpen(false)}>
         <h3 className="text-[17px] font-semibold text-foreground mb-3">
-          Как добавлять друзей
+          {copy.howToAddFriends}
         </h3>
         <div className="flex flex-col gap-2.5">
           <p>
@@ -203,15 +231,14 @@ export function VisibilitySelector({ value, onChange }: VisibilitySelectorProps)
               disabled={inviting}
               className="underline decoration-lime text-foreground font-medium underline-offset-2 hover:opacity-70 transition-opacity disabled:opacity-50"
             >
-              Отправьте приглашение в Халву
+              {copy.sendInvite}
             </button>
           </p>
           <p className="text-muted-foreground text-[14px] leading-relaxed">
-            Когда он перейдёт по пригласительной ссылке, вы автоматически
-            появитесь в списках друзей друг у друга.
+            {copy.guideText1}
           </p>
           <p className="text-muted-foreground text-[14px] leading-relaxed">
-            Ещё можно переслать любое сообщение друга прямо в личку боту — этого достаточно, чтобы он появился в списке друзей.
+            {copy.guideText2}
           </p>
         </div>
       </BottomSheet>
@@ -222,10 +249,10 @@ export function VisibilitySelector({ value, onChange }: VisibilitySelectorProps)
             <Users className="w-7 h-7 text-muted-foreground" />
           </div>
           <h3 className="text-[18px] font-bold text-foreground mb-2">
-            Вы не добавили друзей
+            {copy.noFriendsTitle}
           </h3>
           <p className="text-[15px] text-muted-foreground mb-6 leading-relaxed">
-            При поиске только среди друзей вы никого не найдёте. Сначала добавьте друзей или выберите опцию "Друзья и знакомые", чтобы искать среди сообщений знакомых в доверенной группе.
+            {copy.noFriendsText}
           </p>
         </div>
         <div className="flex flex-col gap-3">
@@ -233,14 +260,14 @@ export function VisibilitySelector({ value, onChange }: VisibilitySelectorProps)
             onClick={handleSelectFriendsAndAcquaintances}
             className="w-full h-[52px] rounded-[20px] bg-lime text-[#1C1C1E] font-bold text-[16px] active:scale-[0.98] transition-all"
           >
-            Искать среди знакомых тоже
+            {copy.searchAcquaintances}
           </button>
           <button
             onClick={handleGoToFriends}
             className="w-full h-[52px] rounded-[20px] bg-accent text-foreground font-semibold text-[16px] active:scale-[0.98] transition-all"
             
           >
-            Добавить друзей
+            {copy.addFriends}
           </button>
 
         </div>

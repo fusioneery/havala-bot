@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n';
 import { cn, openTelegramLink } from '@/lib/utils';
 import { useState } from 'react';
 import { BottomSheet } from './bottom-sheet';
@@ -15,6 +16,20 @@ interface GroupTooltipProps {
 
 export function GroupTooltip({ groups, children, className }: GroupTooltipProps) {
   const [open, setOpen] = useState(false);
+  const { lang } = useI18n();
+  const copy = lang === 'ru'
+    ? {
+        title: 'Доверенные группы',
+        description: 'Группы, участники которых участвуют в подборе заявок на обмен. Сообщения в этих группах анализируются на предложения об обмене и автоматически попадают в список заявок.',
+        open: 'Открыть',
+        empty: 'Нет доверенных групп',
+      }
+    : {
+        title: 'Trusted groups',
+        description: 'Members of these groups are included in exchange matching. Messages in these groups are analyzed for exchange offers and automatically added to the offers list.',
+        open: 'Open',
+        empty: 'No trusted groups',
+      };
 
   const disabled = groups.length === 0;
 
@@ -37,9 +52,9 @@ export function GroupTooltip({ groups, children, className }: GroupTooltipProps)
       </span>
 
       <BottomSheet open={open} onClose={() => setOpen(false)}>
-        <h2 className="text-[17px] font-semibold mb-2">Доверенные группы</h2>
+        <h2 className="text-[17px] font-semibold mb-2">{copy.title}</h2>
         <p className="text-muted-foreground text-[13px] leading-relaxed mb-4">
-          Группы, участники которых участвуют в подборе заявок на обмен. Сообщения в этих группах анализируются на предложения об обмене и автоматически попадают в список заявок.
+          {copy.description}
         </p>
         <div className="max-h-[40vh] overflow-y-auto -mx-2 px-2">
           <ul className="space-y-2">
@@ -55,7 +70,7 @@ export function GroupTooltip({ groups, children, className }: GroupTooltipProps)
                   onClick={() => openTelegramLink(group.link)}
                   className="bg-lime text-[#1C1C1E] text-[12px] font-semibold px-3 py-1.5 rounded-full hover:opacity-80 transition shrink-0"
                 >
-                  Открыть
+                  {copy.open}
                 </button>
               </li>
             ))}
@@ -63,7 +78,7 @@ export function GroupTooltip({ groups, children, className }: GroupTooltipProps)
         </div>
         {groups.length === 0 && (
           <p className="text-muted-foreground text-[14px] text-center py-4">
-            Нет доверенных групп
+            {copy.empty}
           </p>
         )}
       </BottomSheet>

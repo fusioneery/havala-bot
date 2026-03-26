@@ -68,9 +68,9 @@ async function main() {
 
   // Register bot commands in Telegram menu
   await bot.api.setMyCommands([
-    { command: 'start', description: 'Начать работу с ботом' },
-    { command: 'friends', description: 'Список друзей' },
-    { command: 'deleteaccount', description: 'Удалить аккаунт навсегда' },
+    { command: 'start', description: 'Open Halwa' },
+    { command: 'friends', description: 'Your friends' },
+    { command: 'deleteaccount', description: 'Delete account forever' },
   ]);
 
   // Start grammY bot (long polling). Broad allowed_updates for user tracking.

@@ -1,8 +1,10 @@
 import { LlmClient } from '@hawala/llm-client';
+import { type AppLanguage } from '@hawala/shared';
 import { hasPaymentMethodOverlap, type GroupMessage, type ParsedOffer, type ParsedPaymentMethodGroup, type Visibility } from '@hawala/shared';
 import { and, eq, ne } from 'drizzle-orm';
 import { config } from '../config';
 import { db, schema } from '../db';
+import { formatNumber, getBotCopy, getStoredLanguage } from '../lib/i18n';
 import { debugError, debugLog } from './debug-chat';
 import { getRate } from './rates';
 import { upsertGroupMember, upsertUser } from './user-event-tracker';
@@ -43,6 +45,7 @@ interface MatchCandidate {
   userOfferId: number;
   userId: number;
   userTelegramId: number;
+  userLanguage: string;
   visibility: Visibility;
   minSplitAmount: number;
   paymentMethods: string;
@@ -637,6 +640,7 @@ export class GroupMessagePipeline {
         userOfferId: schema.userOffers.id,
         userId: schema.userOffers.userId,
         userTelegramId: schema.users.telegramId,
+        userLanguage: schema.users.language,
         visibility: schema.userOffers.visibility,
         amount: schema.userOffers.amount,
         fromCurrency: schema.userOffers.fromCurrency,
@@ -722,8 +726,9 @@ export class GroupMessagePipeline {
         })
         .returning({ id: schema.matches.id });
 
-      const text = this.buildMatchNotificationText(offer);
-      const keyboard = this.buildMatchResultKeyboard(insertedMatch.id, offer);
+      const language = getStoredLanguage(candidate.userLanguage);
+      const text = this.buildMatchNotificationText(offer, language);
+      const keyboard = this.buildMatchResultKeyboard(insertedMatch.id, offer, language);
 
       void debugLog('🎯', 'Мэтч найден', {
         matchId: insertedMatch.id,
@@ -765,7 +770,8 @@ export class GroupMessagePipeline {
     return trustRow?.type === 'friend';
   }
 
-  private buildMatchNotificationText(offer: PersistedOffer): string {
+  private buildMatchNotificationText(offer: PersistedOffer, lang: AppLanguage): string {
+    const copy = getBotCopy(lang);
     const link = this.buildTelegramMessageLink(
       offer.chatId,
       offer.messageId,
@@ -776,11 +782,11 @@ export class GroupMessagePipeline {
     const fromAmount = offer.amount;
     const toAmount = rate ? fromAmount * rate : null;
 
-    const formattedFromAmount = fromAmount.toLocaleString('ru-RU', { 
-      maximumFractionDigits: 2 
+    const formattedFromAmount = formatNumber(fromAmount, lang, {
+      maximumFractionDigits: 2,
     });
     const formattedToAmount = toAmount 
-      ? toAmount.toLocaleString('ru-RU', { maximumFractionDigits: 2 })
+      ? formatNumber(toAmount, lang, { maximumFractionDigits: 2 })
       : '?';
 
     const snippet = offer.originalMessageText.length > 600
@@ -788,31 +794,32 @@ export class GroupMessagePipeline {
       : offer.originalMessageText;
 
     return [
-      '🎉 *Нашлась подходящая заявка на обмен!*',
+      copy.matchFoundTitle,
       '',
       `*${formattedFromAmount} ${offer.fromCurrency}* → *${formattedToAmount} ${offer.toCurrency}*`,
       '',
-      `[Оригинальное сообщение в группе](${link})`,
+      `[${copy.originalGroupMessage}](${link})`,
       '```',
       snippet,
       '```',
       '',
-      '_После обмена, пожалуйста, нажмите одну из кнопок ниже_',
+      copy.afterExchangePrompt,
     ].join('\n');
   }
 
-  private buildMatchResultKeyboard(matchId: number, offer: PersistedOffer): MatchNotificationKeyboard {
+  private buildMatchResultKeyboard(matchId: number, offer: PersistedOffer, lang: AppLanguage): MatchNotificationKeyboard {
+    const copy = getBotCopy(lang);
     const rows: MatchNotificationKeyboard['inline_keyboard'] = [];
 
     if (offer.authorUsername) {
-      const dmText = `Привет! Нашёл твою заявку на обмен ${offer.fromCurrency} → ${offer.toCurrency} в «${offer.groupName}»`;
+      const dmText = copy.dmIntro(offer.fromCurrency, offer.toCurrency, offer.groupName);
       const url = `https://t.me/${offer.authorUsername}?text=${encodeURIComponent(dmText)}`;
-      rows.push([{ text: '💬 Перейти в личку', url }]);
+      rows.push([{ text: copy.openDirectMessages, url }]);
     }
 
     rows.push(
-      [{ text: '✅ Успешно поменялся', callback_data: `match_success:${matchId}` }],
-      [{ text: '❌ Неуспех / ошибка', callback_data: `match_error:${matchId}` }],
+      [{ text: copy.exchangedSuccessfully, callback_data: `match_success:${matchId}` }],
+      [{ text: copy.exchangeFailed, callback_data: `match_error:${matchId}` }],
     );
 
     return { inline_keyboard: rows };

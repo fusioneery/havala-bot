@@ -50,6 +50,13 @@
       "when": 1772104879966,
       "tag": "0006_new_snowbird",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1774521600000,
+      "tag": "0007_mellow_polyglot",
+      "breakpoints": true
     }
   ]
 }

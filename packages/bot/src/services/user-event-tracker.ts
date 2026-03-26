@@ -1,11 +1,12 @@
 import type { Context } from 'grammy';
+import { resolveLanguage } from '@hawala/shared';
 import { and, eq } from 'drizzle-orm';
 import { config } from '../config';
 import { db, schema } from '../db';
 import { isBlacklisted } from './blacklist';
 import { downloadAndSaveAvatar } from './avatar-storage';
 
-type TelegramUser = { id: number; username?: string; first_name: string; is_bot?: boolean };
+type TelegramUser = { id: number; username?: string; first_name: string; language_code?: string; is_bot?: boolean };
 
 /**
  * Download user's Telegram avatar to local storage and return the static URL.
@@ -31,7 +32,15 @@ function extractUser(ctx: Context): TelegramUser | null {
     ?? ctx.update.poll_answer?.user
     ?? ctx.update.chat_member?.new_chat_member?.user
     ?? ctx.update.my_chat_member?.new_chat_member?.user;
-  return u ? { id: u.id, username: u.username, first_name: u.first_name || 'Unknown', is_bot: u.is_bot } : null;
+  return u
+    ? {
+        id: u.id,
+        username: u.username,
+        first_name: u.first_name || 'Unknown',
+        language_code: 'language_code' in u ? u.language_code : undefined,
+        is_bot: u.is_bot,
+      }
+    : null;
 }
 
 function extractChat(ctx: Context): { id: number; title?: string; type: string } | null {
@@ -81,6 +90,7 @@ export async function upsertUser(user: TelegramUser): Promise<{ id: number }> {
   const setOnConflict: Record<string, unknown> = {
     username: user.username ?? null,
     firstName: user.first_name || 'Unknown',
+    language: resolveLanguage({ locale: user.language_code }),
     updatedAt: new Date(),
   };
   if (avatarUrl) setOnConflict.avatarUrl = avatarUrl;
@@ -91,6 +101,7 @@ export async function upsertUser(user: TelegramUser): Promise<{ id: number }> {
       telegramId: user.id,
       username: user.username ?? null,
       firstName: user.first_name || 'Unknown',
+      language: resolveLanguage({ locale: user.language_code }),
       avatarUrl: avatarUrl ?? null,
     })
     .onConflictDoUpdate({

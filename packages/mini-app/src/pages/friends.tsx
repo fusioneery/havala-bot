@@ -1,4 +1,5 @@
 import { apiFetch } from '@/lib/api';
+import { useI18n } from '@/lib/i18n';
 import { openTelegramLink } from '@/lib/utils';
 import type { ContactListItem, TrustType, UserSearchResult } from '@hawala/shared';
 import { Search, UserPlus, Users, X } from 'lucide-react';
@@ -7,6 +8,7 @@ import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { UserAvatar } from '@/components/ui/user-avatar';
 
 export default function FriendsPage() {
+  const { lang } = useI18n();
   const [contacts, setContacts] = useState<ContactListItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -23,6 +25,42 @@ export default function FriendsPage() {
   const [contactToRemove, setContactToRemove] = useState<ContactListItem | null>(null);
   const [removing, setRemoving] = useState(false);
 
+  const copy = lang === 'ru'
+    ? {
+        inviteShare: 'Добавь меня в Халве! Это бот для быстрого обмена деньгами среди тех, кому ты доверяешь.',
+        friend: 'Друг',
+        acquaintance: 'Знакомый',
+        title: 'Друзья',
+        invite: 'Пригласить',
+        searchPlaceholder: 'Найти пользователя...',
+        searching: 'Поиск...',
+        noResults: 'Никого не найдено',
+        loading: 'Загрузка...',
+        noContactsLine1: 'У вас пока нет контактов.',
+        noContactsLine2: 'Найдите друзей через поиск выше.',
+        removeTitle: 'Удалить из контактов?',
+        removing: 'Удаление...',
+        remove: 'Удалить',
+        cancel: 'Отмена',
+      }
+    : {
+        inviteShare: 'Add me on Halwa. It is a bot for quick money exchange among people you trust.',
+        friend: 'Friend',
+        acquaintance: 'Acquaintance',
+        title: 'Friends',
+        invite: 'Invite',
+        searchPlaceholder: 'Find a user...',
+        searching: 'Searching...',
+        noResults: 'No users found',
+        loading: 'Loading...',
+        noContactsLine1: 'You do not have contacts yet.',
+        noContactsLine2: 'Find friends using the search above.',
+        removeTitle: 'Remove from contacts?',
+        removing: 'Removing...',
+        remove: 'Remove',
+        cancel: 'Cancel',
+      };
+
   const handleInviteFriend = useCallback(async () => {
     if (inviting) return;
     setInviting(true);
@@ -31,7 +69,7 @@ export default function FriendsPage() {
       if (!res.ok) throw new Error('Failed to get invite link');
       const { link } = await res.json();
 
-      const shareText = 'Добавь меня в Халве! Это бот для быстрого обмена деньгами среди тех, кому ты доверяешь.';
+      const shareText = copy.inviteShare;
       const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(shareText)}`;
       openTelegramLink(shareUrl);
     } catch (err) {
@@ -39,7 +77,7 @@ export default function FriendsPage() {
     } finally {
       setInviting(false);
     }
-  }, [inviting]);
+  }, [copy.inviteShare, inviting]);
 
   const fetchContacts = useCallback(async () => {
     try {
@@ -110,20 +148,20 @@ export default function FriendsPage() {
     }
   }, [contactToRemove]);
 
-  const trustLabel = (type: TrustType) => (type === 'friend' ? 'Друг' : 'Знакомый');
+  const trustLabel = (type: TrustType) => (type === 'friend' ? copy.friend : copy.acquaintance);
 
   return (
     <div className="w-full h-dvh flex flex-col bg-background text-foreground">
       {/* Header */}
       <header className="flex items-center justify-between px-5 pt-2.5 pb-4">
-        <h1 className="text-[20px] font-bold tracking-tight">Друзья</h1>
+        <h1 className="text-[20px] font-bold tracking-tight">{copy.title}</h1>
         <button
           onClick={handleInviteFriend}
           disabled={inviting}
           className="h-10 px-4 bg-lime text-[#1C1C1E] rounded-full text-[14px] font-semibold flex items-center gap-2 active:scale-95 transition disabled:opacity-50"
         >
           <UserPlus className="w-4 h-4" strokeWidth={2.5} />
-          <span>Пригласить</span>
+          <span>{copy.invite}</span>
         </button>
       </header>
 
@@ -136,7 +174,7 @@ export default function FriendsPage() {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Найти пользователя..."
+            placeholder={copy.searchPlaceholder}
             className="w-full h-[48px] bg-card border border-border rounded-[16px] pl-11 pr-4 text-[15px] text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30"
           />
           {query && (
@@ -153,9 +191,9 @@ export default function FriendsPage() {
         {query.trim() && (
           <div className="mb-6">
             {searching ? (
-              <p className="text-muted-foreground text-[14px] px-2">Поиск...</p>
+              <p className="text-muted-foreground text-[14px] px-2">{copy.searching}</p>
             ) : searchResults.length === 0 ? (
-              <p className="text-muted-foreground text-[14px] px-2">Никого не найдено</p>
+              <p className="text-muted-foreground text-[14px] px-2">{copy.noResults}</p>
             ) : (
               <div className="bg-card rounded-[20px] border border-border overflow-hidden">
                 {searchResults.map((user, i) => (
@@ -175,13 +213,13 @@ export default function FriendsPage() {
                         onClick={() => addContact(user.id, 'friend')}
                         className="h-[32px] px-3 bg-lime text-[#1C1C1E] rounded-[12px] text-[13px] font-semibold active:scale-95 transition"
                       >
-                        Друг
+                        {copy.friend}
                       </button>
                       <button
                         onClick={() => addContact(user.id, 'acquaintance')}
                         className="h-[32px] px-3 bg-card border border-border text-foreground rounded-[12px] text-[13px] font-semibold active:scale-95 transition"
                       >
-                        Знакомый
+                        {copy.acquaintance}
                       </button>
                     </div>
                   </div>
@@ -193,14 +231,14 @@ export default function FriendsPage() {
 
         {/* Contacts list */}
         {loading ? (
-          <p className="text-muted-foreground text-[14px] text-center mt-8">Загрузка...</p>
+          <p className="text-muted-foreground text-[14px] text-center mt-8">{copy.loading}</p>
         ) : contacts.length === 0 ? (
           <div className="flex flex-col items-center justify-center mt-16 gap-3">
             <Users className="w-12 h-12 text-muted-foreground/40" />
             <p className="text-muted-foreground text-[15px] text-center">
-              У вас пока нет контактов.
+              {copy.noContactsLine1}
               <br />
-              Найдите друзей через поиск выше.
+              {copy.noContactsLine2}
             </p>
           </div>
         ) : (
@@ -246,7 +284,7 @@ export default function FriendsPage() {
               className="w-14 h-14 mb-2"
             />
           )}
-          <h2 className="text-[17px] font-semibold">Удалить из контактов?</h2>
+          <h2 className="text-[17px] font-semibold">{copy.removeTitle}</h2>
           <p className="text-muted-foreground text-[14px]">
             {contactToRemove?.user.firstName}
             {contactToRemove?.user.username && (
@@ -260,14 +298,14 @@ export default function FriendsPage() {
             disabled={removing}
             className="w-full h-[50px] rounded-[16px] bg-destructive text-white text-[15px] font-semibold active:scale-[0.98] transition disabled:opacity-50"
           >
-            {removing ? 'Удаление...' : 'Удалить'}
+            {removing ? copy.removing : copy.remove}
           </button>
           <button
             onClick={() => setContactToRemove(null)}
             disabled={removing}
             className="w-full h-[50px] rounded-[16px] bg-muted text-foreground text-[15px] font-semibold active:scale-[0.98] transition disabled:opacity-50"
           >
-            Отмена
+            {copy.cancel}
           </button>
         </div>
       </BottomSheet>

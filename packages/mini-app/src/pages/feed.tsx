@@ -1,5 +1,6 @@
 import { OfferCard } from '@/components/offer/offer-card';
 import { apiFetch } from '@/lib/api';
+import { useI18n } from '@/lib/i18n';
 import type { MyOfferItem } from '@hawala/shared';
 import { Loader2, Rss } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
@@ -7,6 +8,7 @@ import { useCallback, useEffect, useState } from 'react';
 type FeedFilter = 'friends' | 'acquaintances';
 
 export default function FeedPage() {
+  const { lang } = useI18n();
   const [filter, setFilter] = useState<FeedFilter>('friends');
   const [offers, setOffers] = useState<MyOfferItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,10 +29,24 @@ export default function FeedPage() {
     fetchFeed(filter);
   }, [filter, fetchFeed]);
 
+  const copy = lang === 'ru'
+    ? {
+        title: 'Лента',
+        friends: 'Друзья',
+        acquaintances: 'Друзья и знакомые',
+        empty: 'Пока нет заявок от друзей',
+      }
+    : {
+        title: 'Feed',
+        friends: 'Friends',
+        acquaintances: 'Friends and acquaintances',
+        empty: 'No offers from friends yet',
+      };
+
   return (
     <div className="w-full h-dvh overflow-y-auto bg-background text-foreground">
       <header className="px-6 pt-3.5 pb-3">
-        <h1 className="text-[28px] font-bold tracking-tight">Лента</h1>
+        <h1 className="text-[28px] font-bold tracking-tight">{copy.title}</h1>
         <div className="flex gap-2 mt-3">
           {(['friends', 'acquaintances'] as const).map((f) => (
             <button
@@ -42,7 +58,7 @@ export default function FeedPage() {
                   : 'bg-card border border-border text-muted-foreground'
               }`}
             >
-              {f === 'friends' ? 'Друзья' : 'Друзья и знакомые'}
+              {f === 'friends' ? copy.friends : copy.acquaintances}
             </button>
           ))}
         </div>
@@ -57,7 +73,7 @@ export default function FeedPage() {
           <div className="flex flex-col items-center justify-center mt-16 gap-3">
             <Rss className="w-12 h-12 text-muted-foreground/40" />
             <p className="text-muted-foreground text-[15px] text-center">
-              Пока нет заявок от друзей
+              {copy.empty}
             </p>
           </div>
         ) : (

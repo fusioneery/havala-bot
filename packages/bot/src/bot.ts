@@ -2,6 +2,7 @@ import { and, eq, inArray, or } from 'drizzle-orm';
 import { Bot, InlineKeyboard } from 'grammy';
 import { config } from './config';
 import { db, schema } from './db';
+import { getBotCopy, getStoredLanguage, getTrustTypeLabel, resolveBotLanguage } from './lib/i18n';
 import { addToBlacklist } from './services/blacklist';
 import { handleChatMemberUpdate } from './services/chat-member-handler';
 import { debugError, debugLog } from './services/debug-chat';
@@ -17,6 +18,10 @@ const GROUP_LABEL_CACHE_TTL_MS = 10 * 60 * 1000;
 type GroupLabel = { label: string; username?: string };
 let cachedGroupLabels: GroupLabel[] = [];
 let groupLabelCacheValidUntil = 0;
+
+function getContextCopy(ctx: { from?: { language_code?: string } | undefined }) {
+  return getBotCopy(resolveBotLanguage({ locale: ctx.from?.language_code }));
+}
 
 const groupMessagePipeline = new GroupMessagePipeline({
   sendDirectMessage: async (telegramId, text, options) => {
@@ -82,6 +87,7 @@ bot.on('message:text', async (ctx, next) => {
   const from = ctx.from;
   const message = ctx.message;
   const text = message.text?.trim();
+  const copy = getContextCopy(ctx);
 
   if (chat?.type !== 'private' || !from || !text) {
     await next();
@@ -108,7 +114,7 @@ bot.on('message:text', async (ctx, next) => {
       .limit(1);
 
     if (!match) {
-      await ctx.reply('Мэтч не найден.');
+      await ctx.reply(copy.matchNotFound);
       return;
     }
 
@@ -136,7 +142,7 @@ bot.on('message:text', async (ctx, next) => {
       .limit(1);
 
     if (!userOffer || !groupOffer) {
-      await ctx.reply('Данные не найдены.');
+      await ctx.reply(copy.dataNotFound);
       return;
     }
 
@@ -176,12 +182,12 @@ bot.on('message:text', async (ctx, next) => {
     });
 
     await ctx.reply(
-      'Спасибо за обратную связь! Мы записали информацию об ошибке. Ваша заявка отменена.',
+      copy.thanksForFeedback,
     );
   } catch (error) {
     console.error('Error handling error report:', error);
     void debugError('Error report handler failed', error, { matchId: pendingMatchId });
-    await ctx.reply('Произошла ошибка при сохранении отзыва.');
+    await ctx.reply(copy.feedbackSaveError);
   }
 });
 
@@ -237,9 +243,10 @@ bot.on('chat_member', async (ctx) => {
 bot.command('start', async (ctx) => {
   const user = ctx.from;
   if (!user) return;
+  const copy = getContextCopy(ctx);
 
   const payload = ctx.match?.trim();
-  let referrerUser: { id: number; firstName: string; telegramId: number } | null = null;
+  let referrerUser: { id: number; firstName: string; telegramId: number; language: string } | null = null;
 
   // Handle deal link: ?start=1{4-char-code} (prefix 1 = no friendship, just onboard)
   if (payload?.startsWith('1') && payload.length === 5) {
@@ -272,6 +279,7 @@ bot.command('start', async (ctx) => {
           .select({
             id: schema.users.id,
             firstName: schema.users.firstName,
+            language: schema.users.language,
             telegramId: schema.users.telegramId,
             notifyOnFriendAdd: schema.users.notifyOnFriendAdd,
           })
@@ -309,14 +317,15 @@ bot.command('start', async (ctx) => {
           // Notify referrer only if this is a NEW friendship
           if (!existingFriendship && referrer.notifyOnFriendAdd) {
             try {
+              const referrerCopy = getBotCopy(getStoredLanguage(referrer.language));
               const keyboard = new InlineKeyboard()
-                .webApp('Создать заявку', config.miniAppUrl)
+                .webApp(referrerCopy.createOffer, config.miniAppUrl)
                 .row()
-                .text('🔔 Не уведомлять о новых друзьях', 'toggle_friend_notify');
+                .text(referrerCopy.toggleFriendNotifyButton(true), 'toggle_friend_notify');
 
               await bot.api.sendMessage(
                 referrer.telegramId,
-                `${user.first_name} добавил вас в друзья в Халве, теперь вы можете видеть заявки на обмен друг друга.`,
+                referrerCopy.friendAddedNotification(user.first_name),
                 { reply_markup: keyboard },
               );
             } catch {
@@ -339,27 +348,17 @@ bot.command('start', async (ctx) => {
           )
           .join(', ')})`
       : '';
-
-  const welcomeText = [
-    '<b>Халва</b> — бот для поиска обменов валюты без посредников и комиссий.',
-    '',
-    '<b>Как это работает:</b>',
-    `1. Создайте заявку на обмен в <a href="${config.miniAppUrl}">мини-приложении</a>.`,
-    `2. Бот находит подходящие предложения среди друзей и сообщений в доверенных группах${groupListText}.`,
-    '3. При совпадении — получите контакт автора предложения чтобы договориться об обмене напрямую.',
-    '',
-    '🔒 Бот не хранит деньги и не участвует в расчётах — только соединяет людей.',
-    '',
-    referrerUser ? `\n🎉 Вы и ${referrerUser.firstName} теперь друзья в Халве!` : '',
-  ]
-    .filter(Boolean)
-    .join('\n');
+  const welcomeText = copy.welcomeText({
+    miniAppUrl: config.miniAppUrl,
+    groupListText,
+    referrerFirstName: referrerUser?.firstName,
+  });
 
   await ctx.reply(welcomeText, {
     parse_mode: 'HTML',
     reply_markup: {
       inline_keyboard: [
-        [{ text: 'Открыть Халву', web_app: { url: config.miniAppUrl } }],
+        [{ text: copy.openApp, web_app: { url: config.miniAppUrl } }],
       ],
     },
   });
@@ -368,12 +367,13 @@ bot.command('start', async (ctx) => {
 // Handle forwarded messages — add to trust circles (only in private chats)
 bot.on('message:forward_origin', async (ctx, next) => {
   if (ctx.chat?.type !== 'private') return next();
+  const copy = getContextCopy(ctx);
 
   const keyboard = new InlineKeyboard()
-    .text('Друг', 'trust:friend')
-    .text('Знакомый', 'trust:acquaintance');
+    .text(copy.trustFriend, 'trust:friend')
+    .text(copy.trustAcquaintance, 'trust:acquaintance');
 
-  await ctx.reply('Добавить этого человека как друга или знакомого?', {
+  await ctx.reply(copy.trustPrompt, {
     reply_markup: keyboard,
     reply_to_message_id: ctx.message.message_id,
   });
@@ -392,14 +392,10 @@ function getForwardedUserDisplay(origin: { sender_user?: { first_name: string; l
   return '';
 }
 
-const trustTypeLabel: Record<'friend' | 'acquaintance', string> = {
-  friend: 'друг',
-  acquaintance: 'знакомый',
-};
-
 bot.callbackQuery(/^trust:/, async (ctx) => {
+  const copy = getContextCopy(ctx);
   const type = ctx.callbackQuery.data.replace('trust:', '') as 'friend' | 'acquaintance';
-  const label = trustTypeLabel[type] ?? type;
+  const label = getTrustTypeLabel(type, resolveBotLanguage({ locale: ctx.from?.language_code }));
   const currentUser = ctx.from;
   const repliedMsg = ctx.callbackQuery.message?.reply_to_message;
   const forwardOrigin = repliedMsg?.forward_origin as {
@@ -411,14 +407,14 @@ bot.callbackQuery(/^trust:/, async (ctx) => {
   const suffix = userDisplay ? ` (${userDisplay})` : '';
 
   if (!forwardOrigin?.sender_user?.id) {
-    await ctx.answerCallbackQuery({ text: 'Не удалось определить пользователя из пересланного сообщения' });
+    await ctx.answerCallbackQuery({ text: copy.forwardedUserUnknown });
     return;
   }
 
   const forwardedTelegramId = forwardOrigin.sender_user.id;
 
   if (forwardedTelegramId === currentUser.id) {
-    await ctx.answerCallbackQuery({ text: 'Нельзя добавить себя в контакты' });
+    await ctx.answerCallbackQuery({ text: copy.cannotAddSelf });
     return;
   }
 
@@ -430,7 +426,7 @@ bot.callbackQuery(/^trust:/, async (ctx) => {
       .limit(1);
 
     if (!dbCurrentUser) {
-      await ctx.answerCallbackQuery({ text: 'Сначала запустите бота командой /start' });
+      await ctx.answerCallbackQuery({ text: copy.runStartFirst });
       return;
     }
 
@@ -466,18 +462,19 @@ bot.callbackQuery(/^trust:/, async (ctx) => {
         set: { type },
       });
 
-    await ctx.answerCallbackQuery({ text: `Добавлен как ${label}!` });
-    await ctx.editMessageText(`✅ Добавлен как ${label}${suffix}`);
+    await ctx.answerCallbackQuery({ text: copy.addedAs(label) });
+    await ctx.editMessageText(copy.addedAsMessage(label, suffix));
   } catch (error) {
     console.error('[trust] Error saving trust relation:', error);
-    await ctx.answerCallbackQuery({ text: 'Произошла ошибка при сохранении' });
+    await ctx.answerCallbackQuery({ text: copy.saveError });
   }
 });
 
 bot.callbackQuery(/^match_success:/, async (ctx) => {
+  const copy = getContextCopy(ctx);
   const matchId = parseInt(ctx.callbackQuery.data.replace('match_success:', ''), 10);
   if (isNaN(matchId)) {
-    await ctx.answerCallbackQuery({ text: 'Ошибка: неверный ID' });
+    await ctx.answerCallbackQuery({ text: copy.invalidId });
     return;
   }
 
@@ -493,7 +490,7 @@ bot.callbackQuery(/^match_success:/, async (ctx) => {
       .limit(1);
 
     if (!match) {
-      await ctx.answerCallbackQuery({ text: 'Мэтч не найден' });
+      await ctx.answerCallbackQuery({ text: copy.matchNotFound });
       return;
     }
 
@@ -521,7 +518,7 @@ bot.callbackQuery(/^match_success:/, async (ctx) => {
       .limit(1);
 
     if (!userOffer || !groupOffer) {
-      await ctx.answerCallbackQuery({ text: 'Данные не найдены' });
+      await ctx.answerCallbackQuery({ text: copy.dataNotFound });
       return;
     }
 
@@ -589,24 +586,25 @@ bot.callbackQuery(/^match_success:/, async (ctx) => {
       amount: groupOffer.amount,
     });
 
-    await ctx.answerCallbackQuery({ text: 'Отлично! Обмен записан как успешный.' });
+    await ctx.answerCallbackQuery({ text: copy.exchangeSuccessRecorded });
     await ctx.editMessageText(
-      ctx.callbackQuery.message?.text + '\n\n✅ *Обмен завершён успешно!*',
+      ctx.callbackQuery.message?.text + `\n\n${copy.exchangeSuccessSuffix}`,
       { parse_mode: 'Markdown' },
     );
   } catch (error) {
     console.error('Error handling match_success:', error);
     void debugError('match_success handler failed', error, { matchId });
-    await ctx.answerCallbackQuery({ text: 'Произошла ошибка' });
+    await ctx.answerCallbackQuery({ text: copy.genericError });
   }
 });
 
 bot.callbackQuery(/^match_error:/, async (ctx) => {
+  const copy = getContextCopy(ctx);
   const matchId = parseInt(ctx.callbackQuery.data.replace('match_error:', ''), 10);
   const user = ctx.from;
 
   if (isNaN(matchId) || !user) {
-    await ctx.answerCallbackQuery({ text: 'Ошибка: неверные данные' });
+    await ctx.answerCallbackQuery({ text: copy.invalidData });
     return;
   }
 
@@ -614,7 +612,7 @@ bot.callbackQuery(/^match_error:/, async (ctx) => {
 
   await ctx.answerCallbackQuery();
   await ctx.reply(
-    'Напишите, что именно пошло не так. Это поможет нам улучшить бот.',
+    copy.describeProblem,
     { reply_markup: { force_reply: true } },
   );
 });
@@ -623,6 +621,7 @@ bot.callbackQuery(/^match_error:/, async (ctx) => {
 bot.command('friends', async (ctx) => {
   const user = ctx.from;
   if (!user || ctx.chat?.type !== 'private') return;
+  const copy = getContextCopy(ctx);
 
   const [dbUser] = await db
     .select({ id: schema.users.id })
@@ -631,7 +630,7 @@ bot.command('friends', async (ctx) => {
     .limit(1);
 
   if (!dbUser) {
-    await ctx.reply('Вы ещё не зарегистрированы. Нажмите /start');
+    await ctx.reply(copy.notRegisteredStart);
     return;
   }
 
@@ -650,7 +649,7 @@ bot.command('friends', async (ctx) => {
     );
 
   if (friends.length === 0) {
-    await ctx.reply('У вас пока нет друзей. Перешлите мне сообщение друга или отправьте ему реферальную ссылку.');
+    await ctx.reply(copy.noFriends);
     return;
   }
 
@@ -659,38 +658,31 @@ bot.command('friends', async (ctx) => {
     return f.username ? `${name} — @${f.username}` : name;
   });
 
-  await ctx.reply(`Ваши друзья (${friends.length}):\n\n${lines.join('\n')}`);
+  await ctx.reply(copy.yourFriends(friends.length, lines));
 });
 
 // /deleteaccount — permanently delete all data and self-ban
 bot.command('deleteaccount', async (ctx) => {
   const user = ctx.from;
   if (!user || ctx.chat?.type !== 'private') return;
+  const copy = getContextCopy(ctx);
 
   const keyboard = new InlineKeyboard()
-    .text('Да, удалить навсегда', 'confirm_delete_account')
+    .text(copy.deleteForever, 'confirm_delete_account')
     .row()
-    .text('Отмена', 'cancel_delete_account');
+    .text(copy.cancel, 'cancel_delete_account');
 
-  await ctx.reply(
-    '⚠️ Вы уверены?\n\n'
-    + 'Эта команда безвозвратно удалит ВСЕ ваши данные:\n'
-    + '• Контакты и связи доверия\n'
-    + '• Все заявки и мэтчи\n'
-    + '• Историю обменов\n'
-    + '• Реферальный код\n\n'
-    + 'После удаления ваш аккаунт будет заблокирован навсегда. Это действие нельзя отменить.',
-    { reply_markup: keyboard },
-  );
+  await ctx.reply(copy.deleteConfirmation, { reply_markup: keyboard });
 });
 
 bot.callbackQuery('confirm_delete_account', async (ctx) => {
   const user = ctx.from;
   if (!user) return;
+  const copy = getContextCopy(ctx);
 
   try {
     await ctx.answerCallbackQuery();
-    await ctx.editMessageText('Удаление данных...');
+    await ctx.editMessageText(copy.deletingData);
 
     const [dbUser] = await db
       .select({ id: schema.users.id })
@@ -710,23 +702,25 @@ bot.callbackQuery('confirm_delete_account', async (ctx) => {
     });
 
     await ctx.editMessageText(
-      'Ваш аккаунт удалён и заблокирован навсегда. Прощайте.',
+      copy.accountDeleted,
     );
   } catch (error) {
     console.error('[deleteaccount] Error:', error);
     void debugError('deleteaccount failed', error, { telegramId: user.id });
-    await ctx.editMessageText('Произошла ошибка при удалении. Обратитесь к админу.');
+    await ctx.editMessageText(copy.deleteError);
   }
 });
 
 bot.callbackQuery('cancel_delete_account', async (ctx) => {
-  await ctx.answerCallbackQuery({ text: 'Отменено' });
-  await ctx.editMessageText('Удаление отменено.');
+  const copy = getContextCopy(ctx);
+  await ctx.answerCallbackQuery({ text: copy.cancelled });
+  await ctx.editMessageText(copy.deleteCancelled);
 });
 
 bot.callbackQuery('toggle_friend_notify', async (ctx) => {
   const user = ctx.from;
   if (!user) return;
+  const copy = getContextCopy(ctx);
 
   try {
     const [dbUser] = await db
@@ -736,7 +730,7 @@ bot.callbackQuery('toggle_friend_notify', async (ctx) => {
       .limit(1);
 
     if (!dbUser) {
-      await ctx.answerCallbackQuery({ text: 'Пользователь не найден' });
+      await ctx.answerCallbackQuery({ text: copy.userNotFound });
       return;
     }
 
@@ -746,22 +740,18 @@ bot.callbackQuery('toggle_friend_notify', async (ctx) => {
       .set({ notifyOnFriendAdd: newValue, updatedAt: new Date() })
       .where(eq(schema.users.id, dbUser.id));
 
-    const buttonLabel = newValue
-      ? '🔕 Не уведомлять о новых друзьях'
-      : '🔔Уведомлять о новых друзьях';
-
     const keyboard = new InlineKeyboard()
-      .webApp('Создать заявку', config.miniAppUrl)
+      .webApp(copy.createOffer, config.miniAppUrl)
       .row()
-      .text(buttonLabel, 'toggle_friend_notify');
+      .text(copy.toggleFriendNotifyButton(newValue), 'toggle_friend_notify');
 
     await ctx.editMessageReplyMarkup({ reply_markup: keyboard });
     await ctx.answerCallbackQuery({
-      text: newValue ? 'Уведомления включены' : 'Уведомления выключены',
+      text: newValue ? copy.notificationsEnabled : copy.notificationsDisabled,
     });
   } catch (error) {
     console.error('[toggle_friend_notify] Error:', error);
-    await ctx.answerCallbackQuery({ text: 'Ошибка' });
+    await ctx.answerCallbackQuery({ text: copy.genericError });
   }
 });
 

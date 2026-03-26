@@ -1,3 +1,5 @@
+import { getCurrentAppLanguage } from './i18n';
+
 /**
  * Fetch wrapper that automatically attaches the Telegram WebApp initData
  * header so the server can identify the current user.
@@ -9,6 +11,7 @@ export function apiFetch(input: string, init?: RequestInit): Promise<Response> {
   if (initData) {
     headers.set('x-telegram-init-data', initData);
   }
+  headers.set('x-user-language', getCurrentAppLanguage());
 
   return fetch(input, { ...init, headers });
 }

@@ -5,6 +5,7 @@ import { GroupTooltip } from '@/components/ui/group-tooltip';
 import { ProgressiveBlur } from '@/components/ui/progressive-blur';
 import { TrustedGroupsProvider, useTrustedGroups } from '@/hooks/use-trusted-groups';
 import { apiFetch } from '@/lib/api';
+import { I18nProvider, useI18n } from '@/lib/i18n';
 import LandingPage from '@/pages/landing';
 import AboutPage from '@/pages/about';
 import CreateOrderPage from '@/pages/create-order';
@@ -39,6 +40,30 @@ const LS_KEY_VISITED_ABOUT = 'visited_about';
 function HomePage() {
   const navigate = useNavigate();
   const { groups } = useTrustedGroups();
+  const { lang } = useI18n();
+  const copy = lang === 'ru'
+    ? {
+        title: 'Халва',
+        about: 'Что это?',
+        subtitleStart: 'Меняй валюту среди своих друзей и участников ',
+        trustedGroups: 'доверенных групп',
+        emptyOffers: 'У вас пока нет активных заявок',
+        cancelTitle: 'Отменить заявку?',
+        cancelText: 'Заявка будет удалена, и вы перестанете получать мэтчи по ней.',
+        confirmCancel: 'Да, отменить',
+        back: 'Назад',
+      }
+    : {
+        title: 'Halwa',
+        about: 'What is this?',
+        subtitleStart: 'Exchange currency with your friends and members of ',
+        trustedGroups: 'trusted groups',
+        emptyOffers: 'You do not have active offers yet',
+        cancelTitle: 'Cancel this offer?',
+        cancelText: 'The offer will be removed and you will stop receiving matches for it.',
+        confirmCancel: 'Yes, cancel it',
+        back: 'Back',
+      };
 
   const [offers, setOffers] = useState<MyOfferItem[]>([]);
   const [offersLoading, setOffersLoading] = useState(true);
@@ -75,18 +100,18 @@ function HomePage() {
     <div className="w-full h-dvh overflow-y-auto bg-background text-foreground">
       <header className="px-6 pt-3.5 pb-3">
         <div className="flex items-center justify-between">
-          <h1 className="text-[28px] font-bold tracking-tight">Халва</h1>
+          <h1 className="text-[28px] font-bold tracking-tight">{copy.title}</h1>
           <button
             onClick={() => navigate('/about')}
             className="text-muted-foreground text-[15px] font-medium hover:text-foreground transition"
           >
-            Что это?
+            {copy.about}
           </button>
         </div>
         {!hasVisitedAbout && (
           <p className="text-muted-foreground text-[15px] mt-1">
-            Меняй валюту среди своих друзей и участников{' '}
-            <GroupTooltip groups={groups}>доверенных групп</GroupTooltip>
+            {copy.subtitleStart}
+            <GroupTooltip groups={groups}>{copy.trustedGroups}</GroupTooltip>
           </p>
         )}
       </header>
@@ -99,7 +124,7 @@ function HomePage() {
         ) : offers.length === 0 ? (
           <div className="bg-card rounded-[24px] p-5 border border-border">
             <p className="text-muted-foreground text-[14px]">
-              У вас пока нет активных заявок
+              {copy.emptyOffers}
             </p>
           </div>
         ) : (
@@ -112,22 +137,22 @@ function HomePage() {
       </main>
 
       <BottomSheet open={cancelId !== null} onClose={() => setCancelId(null)}>
-        <h3 className="text-[18px] font-bold text-foreground mb-2">Отменить заявку?</h3>
+        <h3 className="text-[18px] font-bold text-foreground mb-2">{copy.cancelTitle}</h3>
         <p className="text-[15px] text-muted-foreground mb-6">
-          Заявка будет удалена, и вы перестанете получать мэтчи по ней.
+          {copy.cancelText}
         </p>
         <div className="flex flex-col gap-3">
           <button
             onClick={confirmCancel}
             className="w-full h-[52px] rounded-[20px] bg-red-500 text-white font-bold text-[16px] active:scale-[0.98] transition-all"
           >
-            Да, отменить
+            {copy.confirmCancel}
           </button>
           <button
             onClick={() => setCancelId(null)}
             className="w-full h-[52px] rounded-[20px] bg-accent text-foreground font-semibold text-[16px] active:scale-[0.98] transition-all"
           >
-            Назад
+            {copy.back}
           </button>
         </div>
       </BottomSheet>
@@ -147,7 +172,7 @@ function TabLayout() {
   );
 }
 
-function App() {
+function AppShell() {
   const isAuthenticated = useIsAuthenticated();
 
   if (isAuthenticated === null) {
@@ -177,6 +202,14 @@ function App() {
         </Routes>
       </BrowserRouter>
     </TrustedGroupsProvider>
+  );
+}
+
+function App() {
+  return (
+    <I18nProvider>
+      <AppShell />
+    </I18nProvider>
   );
 }
 

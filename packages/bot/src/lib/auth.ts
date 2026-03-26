@@ -1,3 +1,4 @@
+import { normalizeLanguage, resolveLanguage } from '@hawala/shared';
 import type { FastifyRequest } from 'fastify';
 import { eq } from 'drizzle-orm';
 import {
@@ -77,6 +78,11 @@ export async function authenticateRequest(
     || (telegramUser.firstName as string | undefined)
     || telegramUser.id.toString();
   const username = (telegramUser.username as string | undefined) ?? null;
+  const requestedLanguage = normalizeLanguage(request.headers['x-user-language'] as string | undefined);
+  const language = resolveLanguage({
+    lang: requestedLanguage,
+    locale: telegramUser.language_code as string | undefined,
+  });
   // Always download avatar to local storage via Bot API
   const photoUrl = await downloadAndSaveAvatar(telegramUser.id as number);
 
@@ -84,6 +90,7 @@ export async function authenticateRequest(
     telegramId: telegramUser.id as number,
     username,
     firstName,
+    language,
     photoUrl,
   });
 
@@ -103,6 +110,7 @@ interface TelegramUserData {
   telegramId: number;
   username: string | null;
   firstName: string;
+  language: 'ru' | 'en';
   photoUrl: string | null;
 }
 
@@ -117,6 +125,7 @@ async function findOrCreateUser(userData: TelegramUserData): Promise<AuthResult>
     const set: Record<string, unknown> = {
       username: userData.username,
       firstName: userData.firstName,
+      language: userData.language,
       updatedAt: new Date(),
     };
     // Only overwrite avatar if we have a new one
@@ -137,6 +146,7 @@ async function findOrCreateUser(userData: TelegramUserData): Promise<AuthResult>
       telegramId: userData.telegramId,
       username: userData.username,
       firstName: userData.firstName,
+      language: userData.language,
       avatarUrl: userData.photoUrl,
     })
     .returning({ id: schema.users.id });
@@ -159,6 +169,7 @@ async function devFallback(): Promise<{ ok: true; data: AuthResult }> {
     .values({
       telegramId: 1,
       firstName: 'Dev User',
+      language: 'en',
     })
     .returning({ id: schema.users.id });
 

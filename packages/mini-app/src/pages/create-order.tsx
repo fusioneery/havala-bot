@@ -9,6 +9,7 @@ import { AccordionSection } from '@/components/ui/accordion-section';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { useAutoOpenAccordions } from '@/hooks/use-auto-open-accordions';
 import { apiFetch } from '@/lib/api';
+import { useI18n } from '@/lib/i18n';
 import { useBackButton } from '@/hooks/use-back-button';
 import { usePersistedFormState } from '@/hooks/use-persisted-state';
 import { getDefaultPaymentMethod, type Currency, type PaymentMethodGroup, type SearchRequest, type SearchResponse, type Visibility } from '@hawala/shared';
@@ -29,7 +30,57 @@ const ALL_FIAT_METHODS: MethodSelection = ['swift', 'local_banks'];
 
 export default function CreateOrderPage() {
   const navigate = useNavigate();
+  const { lang } = useI18n();
   useBackButton('/');
+  const copy = lang === 'ru'
+    ? {
+        own: 'свой',
+        balanced: 'равновесный',
+        market: 'рыночный',
+        friendsAndAcquaintances: 'Друзья и знакомые',
+        friendsOnly: 'Только друзья',
+        any: 'любая',
+        fullOnly: 'только полная',
+        fromLabel: 'Меняю',
+        fromPickerTitle: 'Выберите валюту, которую меняете',
+        toLabel: 'На',
+        toPickerTitle: 'Выберите валюту, которую хотите получить',
+        rate: 'Курс',
+        minExchange: 'Минимальная сумма обмена',
+        searchRadius: 'Круг поиска',
+        searching: 'Ищем...',
+        search: 'Искать',
+        limitTitle: 'Лимит заявок исчерпан',
+        limitText: 'Для защиты от мошенничества мы ограничиваем количество заявок.',
+        today: 'Сегодня',
+        month: 'В этом месяце',
+        later: 'Попробуйте снова завтра или дождитесь начала следующего месяца.',
+        ok: 'Понятно',
+      }
+    : {
+        own: 'custom',
+        balanced: 'balanced',
+        market: 'market',
+        friendsAndAcquaintances: 'Friends and acquaintances',
+        friendsOnly: 'Only friends',
+        any: 'any',
+        fullOnly: 'full only',
+        fromLabel: 'I exchange',
+        fromPickerTitle: 'Choose the currency you give',
+        toLabel: 'For',
+        toPickerTitle: 'Choose the currency you want to receive',
+        rate: 'Rate',
+        minExchange: 'Minimum exchange amount',
+        searchRadius: 'Search radius',
+        searching: 'Searching...',
+        search: 'Search',
+        limitTitle: 'Offer limit reached',
+        limitText: 'To reduce fraud risk, we limit the number of offers.',
+        today: 'Today',
+        month: 'This month',
+        later: 'Try again tomorrow or wait until the next month begins.',
+        ok: 'Got it',
+      };
   const { saved, persist, isFirstVisit } = usePersistedFormState();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [rateLimitError, setRateLimitError] = useState<RateLimitError | null>(null);
@@ -137,22 +188,22 @@ export default function CreateOrderPage() {
     if (!isUsdtRubPair) {
       if (!effectiveRate) return '—';
       const formatted = effectiveRate >= 1 ? effectiveRate.toFixed(2) : effectiveRate.toPrecision(4);
-      const sourceLabel = marketRateSource === 'custom' ? ' — свой' : '';
+      const sourceLabel = marketRateSource === 'custom' ? ` — ${copy.own}` : '';
       return `1 ${fromCurrency} = ${formatted} ${toCurrency}${sourceLabel}`;
     }
     const labels: Record<RateSource, string> = {
-      vas3k: 'равновесный',
+      vas3k: copy.balanced,
       google: 'Google',
-      custom: 'свой',
-      market: 'рыночный',
+      custom: copy.own,
+      market: copy.market,
     };
     const rate = effectiveRate?.toFixed(2) ?? '—';
     return `${rate} ₽ — ${labels[rateSource]}`;
-  }, [effectiveRate, rateSource, marketRateSource, ratesLoading, isUsdtRubPair, fromCurrency, toCurrency]);
+  }, [copy.balanced, copy.market, copy.own, effectiveRate, rateSource, marketRateSource, ratesLoading, isUsdtRubPair, fromCurrency, toCurrency]);
 
   const visibilityLabels: Record<Visibility, string> = {
-    friends_and_acquaintances: 'Друзья и знакомые',
-    friends_only: 'Только друзья',
+    friends_and_acquaintances: copy.friendsAndAcquaintances,
+    friends_only: copy.friendsOnly,
   };
 
   const splitPreview = useCallback(
@@ -160,11 +211,11 @@ export default function CreateOrderPage() {
       const parse = (s: string) => Number(s.replace(/[^\d.]/g, '')) || 0;
       const max = parse(fromAmount);
       const current = parse(minExchangeAmount);
-      if (current <= 0) return 'любая';
-      if (current >= max) return 'только полная';
+      if (current <= 0) return copy.any;
+      if (current >= max) return copy.fullOnly;
       return open ? undefined : `${minExchangeAmount} ${fromCurrency}`;
     },
-    [minExchangeAmount, fromAmount, fromCurrency],
+    [copy.any, copy.fullOnly, minExchangeAmount, fromAmount, fromCurrency],
   );
 
   // ─── Clamp minExchangeAmount when fromAmount changes ───
@@ -298,7 +349,8 @@ export default function CreateOrderPage() {
         <div className="flex flex-col gap-2 mt-4">
           <div className="relative">
             <CurrencyInput
-              label="Меняю"
+              label={copy.fromLabel}
+              pickerTitle={copy.fromPickerTitle}
               value={fromAmount}
               onChange={setFromAmount}
               currency={fromCurrency}
@@ -314,7 +366,8 @@ export default function CreateOrderPage() {
           </div>
 
           <CurrencyInput
-            label="На"
+            label={copy.toLabel}
+            pickerTitle={copy.toPickerTitle}
             value={toAmount}
             onChange={setToAmount}
             currency={toCurrency}
@@ -332,7 +385,7 @@ export default function CreateOrderPage() {
         {/* ── Exchange rate ── */}
         {isUsdtRubPair ? (
           <AccordionSection
-            title="Курс"
+            title={copy.rate}
             preview={ratesLoading ? <Skeleton className="h-5 w-28" /> : ratePreview}
             className="mt-6"
             open={acc.isOpen(0)}
@@ -351,7 +404,7 @@ export default function CreateOrderPage() {
           </AccordionSection>
         ) : (
           <AccordionSection
-            title="Курс"
+            title={copy.rate}
             preview={ratesLoading ? <Skeleton className="h-5 w-36" /> : ratePreview}
             className="mt-6"
             open={acc.isOpen(0)}
@@ -373,7 +426,7 @@ export default function CreateOrderPage() {
 
         {/* ── Minimum exchange amount ── */}
         <AccordionSection
-          title="Минимальная сумма обмена"
+          title={copy.minExchange}
           preview={splitPreview}
           className="mt-2"
           open={acc.isOpen(1)}
@@ -392,7 +445,7 @@ export default function CreateOrderPage() {
 
         {/* ── Visibility selector ── */}
         <AccordionSection
-          title="Круг поиска"
+          title={copy.searchRadius}
           preview={visibilityLabels[visibility]}
           className="mt-2"
           open={acc.isOpen(2)}
@@ -415,7 +468,7 @@ export default function CreateOrderPage() {
           ) : (
             <Search className="w-5 h-5" />
           )}
-          {isSubmitting ? 'Ищем...' : 'Искать'}
+          {isSubmitting ? copy.searching : copy.search}
         </button>
       </div>
 
@@ -425,30 +478,30 @@ export default function CreateOrderPage() {
           <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
             <ShieldAlert className="w-8 h-8 text-destructive" />
           </div>
-          <h3 className="text-xl font-bold mb-2">Лимит заявок исчерпан</h3>
+          <h3 className="text-xl font-bold mb-2">{copy.limitTitle}</h3>
           <p className="text-muted-foreground mb-4">
-            Для защиты от мошенничества мы ограничиваем количество заявок.
+            {copy.limitText}
           </p>
           {rateLimitError && (
             <div className="w-full bg-muted/50 rounded-xl p-4 mb-4 space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Сегодня</span>
+                <span className="text-muted-foreground">{copy.today}</span>
                 <span className="font-medium">{rateLimitError.dailyCount} / {rateLimitError.dailyLimit}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">В этом месяце</span>
+                <span className="text-muted-foreground">{copy.month}</span>
                 <span className="font-medium">{rateLimitError.monthlyCount} / {rateLimitError.monthlyLimit}</span>
               </div>
             </div>
           )}
           <p className="text-sm text-muted-foreground">
-            Попробуйте снова завтра или дождитесь начала следующего месяца.
+            {copy.later}
           </p>
           <button
             onClick={() => setRateLimitError(null)}
             className="mt-6 w-full bg-muted hover:bg-muted/80 text-foreground h-12 rounded-xl font-medium transition-colors"
           >
-            Понятно
+            {copy.ok}
           </button>
         </div>
       </BottomSheet>

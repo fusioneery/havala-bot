@@ -1,5 +1,6 @@
 import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useI18n } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { Check, ChevronDown } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -15,11 +16,6 @@ const FIAT = [
   'MYR', 'NOK', 'SEK', 'SGD', 'VND',
 ] as const;
 const CRYPTO_SET = new Set<string>(CRYPTO);
-
-const PICKER_GROUPS = [
-  { label: 'Криптовалюты', currencies: CRYPTO },
-  { label: 'Фиатные валюты', currencies: FIAT },
-];
 
 const RECENT_KEY = 'hawala:recent-currencies';
 const MAX_RECENT = 3;
@@ -41,10 +37,10 @@ function addRecentCurrency(code: string): void {
 
 const CRYPTO_LABEL = 'ERC-20 / TRC-20 / BEP-20';
 
-export function getPaymentGroup(currency: string): string {
+export function getPaymentGroup(currency: string, lang: 'ru' | 'en'): string {
   if (CRYPTO_SET.has(currency)) return CRYPTO_LABEL;
-  if (currency === 'RUB') return 'СБП / все банки';
-  return 'SWIFT/SEPA или местный банк';
+  if (currency === 'RUB') return lang === 'ru' ? 'СБП / все банки' : 'SBP / all banks';
+  return lang === 'ru' ? 'SWIFT/SEPA или местный банк' : 'SWIFT/SEPA or local bank';
 }
 
 export function formatWithSpaces(input: string): string {
@@ -73,7 +69,7 @@ function renderPickerIcon(code: string) {
   );
 }
 
-function CurrencyRow({ code, selected, onSelect }: { code: string; selected: boolean; onSelect: () => void }) {
+function CurrencyRow({ code, selected, onSelect, lang }: { code: string; selected: boolean; onSelect: () => void; lang: 'ru' | 'en' }) {
   return (
     <button
       onClick={onSelect}
@@ -91,7 +87,7 @@ function CurrencyRow({ code, selected, onSelect }: { code: string; selected: boo
       <div className="flex flex-col items-start flex-1">
         <span className="text-[16px] font-semibold">{code}</span>
         <span className="text-[12px] text-muted-foreground">
-          {getPaymentGroup(code)}
+          {getPaymentGroup(code, lang)}
         </span>
       </div>
       {selected && <Check className="w-5 h-5 text-foreground" />}
@@ -115,6 +111,7 @@ interface CurrencyInputProps {
   loading?: boolean;
   selectedMethods?: PaymentMethod[];
   onMethodsChange?: (methods: PaymentMethod[]) => void;
+  pickerTitle?: string;
 }
 
 function getInputFontSize(value: string): string {
@@ -138,9 +135,24 @@ export function CurrencyInput({
   loading,
   selectedMethods,
   onMethodsChange,
+  pickerTitle,
 }: CurrencyInputProps) {
+  const { lang } = useI18n();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [recentCurrencies, setRecentCurrencies] = useState<string[]>(getRecentCurrencies);
+  const copy = lang === 'ru'
+    ? {
+        crypto: 'Криптовалюты',
+        fiat: 'Фиатные валюты',
+        localBanks: 'Локальные банки',
+        recent: 'Недавние',
+      }
+    : {
+        crypto: 'Cryptocurrencies',
+        fiat: 'Fiat currencies',
+        localBanks: 'Local banks',
+        recent: 'Recent',
+      };
 
   const inputFontSize = useMemo(() => getInputFontSize(value), [value]);
 
@@ -159,8 +171,14 @@ export function CurrencyInput({
 
   // Show the opposite group first: if pair is crypto → fiat first, and vice versa
   const orderedGroups = pairCurrency && CRYPTO_SET.has(pairCurrency)
-    ? [...PICKER_GROUPS].reverse()
-    : PICKER_GROUPS;
+    ? [
+        { label: copy.crypto, currencies: CRYPTO },
+        { label: copy.fiat, currencies: FIAT },
+      ].reverse()
+    : [
+        { label: copy.crypto, currencies: CRYPTO },
+        { label: copy.fiat, currencies: FIAT },
+      ];
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onChange(formatWithSpaces(e.target.value));
@@ -263,7 +281,7 @@ export function CurrencyInput({
                   <span className="w-2 h-2 rounded-full bg-foreground" />
                 )}
               </span>
-              Локальные банки
+              {copy.localBanks}
             </button>
           </div>
         )}
@@ -271,20 +289,19 @@ export function CurrencyInput({
 
       {/* Currency picker */}
       <BottomSheet open={pickerOpen} onClose={() => setPickerOpen(false)}>
-        <h3 className="text-[20px] font-bold mb-4">
-          {label === 'Меняю' ? 'Выберите валюту, которую меняете' : 'Выберите валюту, которую хотите получить'}
-        </h3>
+        <h3 className="text-[20px] font-bold mb-4">{pickerTitle ?? label}</h3>
         <div className="max-h-[60vh] overflow-y-auto no-scrollbar">
           {recentCurrencies.length > 0 && (
             <div className="mb-4">
               <p className="text-[13px] text-muted-foreground font-semibold uppercase tracking-wide mb-2 px-1">
-                Недавние
+                {copy.recent}
               </p>
               <div className="flex flex-col gap-0.5">
                 {recentCurrencies.map((c) => (
                   <CurrencyRow
                     key={c}
                     code={c}
+                    lang={lang}
                     selected={currency === c}
                     onSelect={() => {
                       onCurrencyChange(c);
@@ -307,6 +324,7 @@ export function CurrencyInput({
                   <CurrencyRow
                     key={c}
                     code={c}
+                    lang={lang}
                     selected={currency === c}
                     onSelect={() => {
                       onCurrencyChange(c);

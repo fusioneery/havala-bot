@@ -18,6 +18,7 @@ export const users = table(
     telegramId: t.int('telegram_id').notNull().unique(),
     username: t.text(),
     firstName: t.text('first_name').notNull(),
+    language: t.text({ enum: ['ru', 'en'] }).notNull().default('en'),
     avatarUrl: t.text('avatar_url'),
     notifyOnFriendAdd: t.int('notify_on_friend_add', { mode: 'boolean' }).notNull().default(true),
     createdAt: t.int('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),

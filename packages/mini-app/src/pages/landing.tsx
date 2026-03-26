@@ -1,13 +1,62 @@
-import { ArrowRight, ChevronRight, Github, Globe, MessageCircle, Repeat, Search, Shield, Users } from 'lucide-react';
+import { ArrowRight, ChevronRight, ExternalLink, Github, Globe, MessageCircle, Repeat, Search, Shield, Users } from 'lucide-react';
 
 import createOrderScreenshot from '@/assets/screenshots/create-order-dark.png';
 import matchesScreenshot from '@/assets/screenshots/matches-detail-1.png';
 import notificationScreenshot from '@/assets/screenshots/notification.png';
+import { useI18n } from '@/lib/i18n';
 
 const BOT_USERNAME = import.meta.env.VITE_BOT_USERNAME || 'halwa_app_bot';
 
 export default function LandingPage() {
   const botUrl = `https://t.me/${BOT_USERNAME.replace('@', '')}`;
+  const { lang } = useI18n();
+  const copy = lang === 'ru'
+    ? {
+        cta: 'Перейти в бота',
+        subtitle: 'Меняй валюту напрямую среди друзей и участников доверенных групп — без посредников и комиссий',
+        stepsTitle: 'Три шага к обмену',
+        step1Title: 'Создай заявку',
+        step1Description: 'Укажи какую валюту хочешь обменять, на что и в каком объёме.',
+        step2Title: 'Получи мэтч',
+        step2Description: 'Бот найдёт подходящие предложения среди друзей и участников доверенных групп.',
+        step3Title: 'Договоритесь напрямую',
+        step3Description: 'Свяжись с автором предложения прямо в Telegram и обменяйся.',
+        howItWorks: 'Принцип работы',
+        p2pTitle: 'P2P-обмен',
+        p2pText: 'Халва работает по принципу хавалы — прямого обмена между людьми. Никаких посредников, курс определяете вы сами.',
+        trustTitle: 'Доверие через связи',
+        trustText: 'Вы обмениваетесь только с друзьями или участниками проверенных Telegram-групп. Круг поиска задаёте сами.',
+        botOnlyTitle: 'Бот — только посредник',
+        botOnlyText: 'Халва не хранит деньги и не участвует в переводах. Бот только находит подходящие пары и соединяет людей.',
+        openSourceTitle: 'Открытый код',
+        openSourceText: 'Исходный код проекта полностью открыт. Вы можете развернуть свою версию бота для своего сообщества.',
+        more: 'Подробнее о проекте',
+        madeWith: 'made with',
+        heartTitle: 'Сделано с любовью',
+      }
+    : {
+        cta: 'Open bot',
+        subtitle: 'Exchange currency directly with friends and members of trusted groups, without middlemen or fees',
+        stepsTitle: 'Three steps to exchange',
+        step1Title: 'Create an offer',
+        step1Description: 'Choose what currency you want to exchange, what you want in return, and the amount.',
+        step2Title: 'Get a match',
+        step2Description: 'The bot finds matching offers among your friends and members of trusted groups.',
+        step3Title: 'Arrange directly',
+        step3Description: 'Contact the offer author in Telegram and exchange directly.',
+        howItWorks: 'How it works',
+        p2pTitle: 'P2P exchange',
+        p2pText: 'Halwa follows the hawala principle: direct exchange between people. No middlemen, and you set the rate yourself.',
+        trustTitle: 'Trust through connections',
+        trustText: 'You exchange only with friends or members of trusted Telegram groups. You choose the search radius.',
+        botOnlyTitle: 'The bot is only a connector',
+        botOnlyText: 'Halwa does not hold money and does not participate in transfers. The bot only finds suitable pairs and connects people.',
+        openSourceTitle: 'Open source',
+        openSourceText: 'The project source code is fully open. You can deploy your own version of the bot for your community.',
+        more: 'Learn more about the project',
+        madeWith: 'made with',
+        heartTitle: 'Made with love',
+      };
 
   return (
     <div className="h-dvh bg-background text-foreground overflow-y-auto">
@@ -21,40 +70,40 @@ export default function LandingPage() {
             href={botUrl}
             className="inline-flex items-center gap-2 bg-lime hover:bg-lime-hover text-[#1C1C1E] h-[56px] px-8 rounded-[20px] font-bold text-[17px] active:scale-[0.98] transition-all shadow-[0_8px_24px_rgba(200,241,53,0.4)]"
           >
-            Перейти в бота
+            {copy.cta}
             <ArrowRight className="w-5 h-5" />
           </a>
         </div>
         <p className="text-[18px] sm:text-[20px] text-muted-foreground leading-relaxed max-w-xl mx-auto">
-          Меняй валюту напрямую среди друзей и участников доверенных групп — без посредников и комиссий
+          {copy.subtitle}
         </p>
       </section>
 
       {/* ── 3-Step Flow ── */}
       <section className="py-12">
-        <h2 className="text-[24px] font-bold mb-8 text-center px-6">Три шага к обмену</h2>
+        <h2 className="text-[24px] font-bold mb-8 text-center px-6">{copy.stepsTitle}</h2>
         <div
           className="flex gap-2 px-[5vw] overflow-x-auto snap-x snap-mandatory sm:overflow-visible sm:snap-none sm:gap-4 sm:px-6 sm:items-center sm:max-w-5xl sm:mx-auto"
           style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
         >
           <FlowStep
             icon={<Search className="w-5 h-5" />}
-            title="Создайте заявку"
-            description="Укажите какую валюту хотите обменять, на что и в каком объёме."
+            title={copy.step1Title}
+            description={copy.step1Description}
             screenshot={createOrderScreenshot}
           />
           <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0 hidden sm:block" />
           <FlowStep
             icon={<Users className="w-5 h-5" />}
-            title="Получите мэтч"
-            description="Бот найдёт подходящие предложения среди друзей и участников доверенных групп."
+            title={copy.step2Title}
+            description={copy.step2Description}
             screenshot={matchesScreenshot}
           />
           <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0 hidden sm:block" />
           <FlowStep
             icon={<MessageCircle className="w-5 h-5" />}
-            title="Договоритесь напрямую"
-            description="Свяжитесь с автором предложения прямо в Telegram и обменяйтесь."
+            title={copy.step3Title}
+            description={copy.step3Description}
             screenshot={notificationScreenshot}
           />
         </div>
@@ -63,27 +112,28 @@ export default function LandingPage() {
 
       {/* ── How It Works ── */}
       <section className="px-6 py-12 max-w-xl mx-auto">
-        <h2 className="text-[24px] font-bold mb-6 text-center">Принцип работы</h2>
+        <h2 className="text-[24px] font-bold mb-6 text-center">{copy.howItWorks}</h2>
         <div className="bg-card rounded-[20px] p-6 space-y-7">
           <ExplainerItem
             icon={<Repeat className="w-4 h-4" />}
-            title="P2P-обмен"
-            text="Халва работает по принципу хавалы — прямого обмена между людьми. Никаких посредников, курс определяете вы сами."
+            title={copy.p2pTitle}
+            text={copy.p2pText}
           />
           <ExplainerItem
             icon={<Shield className="w-4 h-4" />}
-            title="Доверие через связи"
-            text="Вы обмениваетесь только с друзьями или участниками проверенных Telegram-групп. Круг поиска задаёте сами."
+            title={copy.trustTitle}
+            text={copy.trustText}
           />
           <ExplainerItem
             icon={<Globe className="w-4 h-4" />}
-            title="Бот — только посредник"
-            text="Халва не хранит деньги и не участвует в переводах. Бот только находит подходящие пары и соединяет людей."
+            title={copy.botOnlyTitle}
+            text={copy.botOnlyText}
           />
           <ExplainerItem
             icon={<Github className="w-4 h-4" />}
-            title="Открытый код"
-            text="Исходный код проекта полностью открыт. Вы можете развернуть свою версию бота для своего сообщества."
+            title={copy.openSourceTitle}
+            text={copy.openSourceText}
+            href="https://github.com/fusioneery/havala-bot"
           />
         </div>
       </section>
@@ -97,10 +147,10 @@ export default function LandingPage() {
             rel="noopener noreferrer"
             className="opacity-60 hover:opacity-100 transition-opacity"
           >
-            Подробнее о проекте
+            {copy.more}
           </a>
           <span className="flex items-center gap-1.5 opacity-60">
-            made with
+            {copy.madeWith}
             <HeartIcon />
             by{' '}
             <a
@@ -161,12 +211,24 @@ function FlowStep({ icon, title, description, screenshot }: {
   );
 }
 
-function ExplainerItem({ icon, title, text }: { icon: React.ReactNode; title: string; text: string }) {
+function ExplainerItem({ icon, title, text, href }: { icon: React.ReactNode; title: string; text: string; href?: string }) {
   return (
     <div className="flex gap-3">
       <span className="flex-shrink-0 mt-[3px] text-accent2">{icon}</span>
       <div>
-        <h3 className="text-[15px] font-semibold mb-0.5">{title}</h3>
+        {href ? (
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-[15px] font-semibold mb-0.5 hover:opacity-70 transition-opacity"
+          >
+            {title}
+            <ExternalLink className="w-3.5 h-3.5 opacity-60" />
+          </a>
+        ) : (
+          <h3 className="text-[15px] font-semibold mb-0.5">{title}</h3>
+        )}
         <p className="text-[14px] text-muted-foreground leading-relaxed">{text}</p>
       </div>
     </div>
@@ -174,6 +236,7 @@ function ExplainerItem({ icon, title, text }: { icon: React.ReactNode; title: st
 }
 
 function HeartIcon() {
+  const { lang } = useI18n();
   return (
     <svg
       viewBox="0 0 24 24"
@@ -182,7 +245,7 @@ function HeartIcon() {
       style={{ animation: 'heartbeat 1.2s ease-in-out infinite' }}
       aria-hidden
     >
-      <title>Сделано с любовью</title>
+      <title>{lang === 'ru' ? 'Сделано с любовью' : 'Made with love'}</title>
       <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
       <style>{`
         @keyframes heartbeat {

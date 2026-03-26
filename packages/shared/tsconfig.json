@@ -2,7 +2,9 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "rootDir": "src",
-    "outDir": "dist"
+    "outDir": "dist",
+    "types": ["bun"],
+    "typeRoots": ["../bot/node_modules/@types"]
   },
   "include": ["src"]
 }

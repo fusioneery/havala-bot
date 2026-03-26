@@ -1,3 +1,4 @@
+import { getCurrentAppLanguage } from './i18n';
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -48,15 +49,21 @@ export function buildDmUrl(params: {
   telegramMessageLink: string | null;
   matchSource?: 'group_message' | 'hawala';
   dealCode?: string | null;
+  lang?: 'ru' | 'en';
 }): string | null {
   const { username, groupName, telegramMessageLink, matchSource, dealCode } = params;
   if (!username) return null;
+  const lang = params.lang ?? getCurrentAppLanguage();
 
   const isHawalaMatch = matchSource === 'hawala' || !telegramMessageLink;
 
   const introLine = isHawalaMatch
-    ? 'Привет, нашёл твою заявку в Халве, давай поменяемся?'
-    : `Привет, я из ${groupName}, давай поменяемся? ${telegramMessageLink}`;
+    ? (lang === 'ru'
+      ? 'Привет, нашёл твою заявку в Халве, давай поменяемся?'
+      : 'Hi, I found your offer in Halwa. Want to exchange?')
+    : (lang === 'ru'
+      ? `Привет, я из ${groupName}, давай поменяемся? ${telegramMessageLink}`
+      : `Hi, I found your offer from ${groupName}. Want to exchange? ${telegramMessageLink}`);
 
   const botLink = dealCode
     ? `https://t.me/${BOT_LINK}?start=1${dealCode}`
@@ -64,7 +71,9 @@ export function buildDmUrl(params: {
 
   const messageLines = [introLine];
   if (SHOW_BOT_ATTRIBUTION) {
-    messageLines.push('', `если что, нашёл тебя через Халву: ${botLink}`);
+    messageLines.push('', lang === 'ru'
+      ? `если что, нашёл тебя через Халву: ${botLink}`
+      : `found you through Halwa, in case it helps: ${botLink}`);
   }
   const messageText = messageLines.join('\n');
 

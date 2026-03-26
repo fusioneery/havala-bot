@@ -1,6 +1,7 @@
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDealCode } from '@/hooks/use-deal-code';
 import { apiFetch } from '@/lib/api';
+import { useI18n } from '@/lib/i18n';
 import { buildDmUrl, cn, getGroupLink, openTelegramLink } from '@/lib/utils';
 import type { MatchResult, TrustType } from '@hawala/shared';
 import { ExternalLink, MessageCircle } from 'lucide-react';
@@ -11,21 +12,39 @@ interface MatchCardProps {
   searchedAt?: string;
 }
 
-function formatSearchedAt(dateStr: string): string {
+function formatSearchedAt(dateStr: string, locale: string, lang: 'ru' | 'en'): string {
   const d = new Date(dateStr);
   const now = new Date();
   const isToday = d.toDateString() === now.toDateString();
-  const time = d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-  if (isToday) return `сегодня в ${time}`;
+  const time = d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+  if (isToday) return lang === 'ru' ? `сегодня в ${time}` : `today at ${time}`;
   const yesterday = new Date(now);
   yesterday.setDate(yesterday.getDate() - 1);
-  if (d.toDateString() === yesterday.toDateString()) return `вчера в ${time}`;
-  return `${d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })} в ${time}`;
+  if (d.toDateString() === yesterday.toDateString()) return lang === 'ru' ? `вчера в ${time}` : `yesterday at ${time}`;
+  return `${d.toLocaleDateString(locale, { day: 'numeric', month: 'short' })} ${lang === 'ru' ? 'в' : 'at'} ${time}`;
 }
 
 export function MatchCard({ match, searchedAt }: MatchCardProps) {
   const dealCode = useDealCode();
+  const { lang, locale } = useI18n();
   const { author, offer, trustType, groupName, telegramMessageLink, matchSource } = match;
+  const copy = lang === 'ru'
+    ? {
+        friend: 'Друг',
+        fromGroup: 'знакомый из ',
+        fromHalwa: 'знакомый из Халвы',
+        offers: 'Предлагает',
+        write: 'Написать в личку',
+        openMessage: 'Перейти к сообщению',
+      }
+    : {
+        friend: 'Friend',
+        fromGroup: 'acquaintance from ',
+        fromHalwa: 'acquaintance from Halwa',
+        offers: 'Offers',
+        write: 'Open chat',
+        openMessage: 'Open message',
+      };
   const displayTrustType: TrustType = trustType ?? 'acquaintance';
   const [convertedAmount, setConvertedAmount] = useState<number | null>(null);
   const isGroupMessageMatch = (matchSource ?? (telegramMessageLink ? 'group_message' : 'hawala')) === 'group_message';
@@ -59,6 +78,7 @@ export function MatchCard({ match, searchedAt }: MatchCardProps) {
     telegramMessageLink,
     matchSource,
     dealCode,
+    lang,
   }) ?? (isGroupMessageMatch ? telegramMessageLink : null);
 
   return (
@@ -82,10 +102,10 @@ export function MatchCard({ match, searchedAt }: MatchCardProps) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className="text-[15px] font-semibold text-foreground truncate">
-              {author.firstName}
-            </span>
-            {displayTrustType === 'friend' && (
-              <span className="shrink-0 text-[13px] font-bold text-accent2">Друг</span>
+            {author.firstName}
+          </span>
+          {displayTrustType === 'friend' && (
+              <span className="shrink-0 text-[13px] font-bold text-accent2">{copy.friend}</span>
             )}
           </div>
           {author.username && (
@@ -95,7 +115,7 @@ export function MatchCard({ match, searchedAt }: MatchCardProps) {
         <div className="shrink-0 text-right text-[13px]">
           {displayTrustType === 'friend' ? null : isGroupMessageMatch && telegramMessageLink ? (
             <span className="text-foreground">
-              знакомый из{' '}
+              {copy.fromGroup}
               <button
                 onClick={() => openTelegramLink(getGroupLink(telegramMessageLink))}
                 className="text-foreground hover:underline"
@@ -104,7 +124,7 @@ export function MatchCard({ match, searchedAt }: MatchCardProps) {
               </button>
             </span>
           ) : (
-            <span className="text-foreground">знакомый из Халвы</span>
+            <span className="text-foreground">{copy.fromHalwa}</span>
           )}
         </div>
       </div>
@@ -112,21 +132,21 @@ export function MatchCard({ match, searchedAt }: MatchCardProps) {
       {/* Offer details */}
       <div className="bg-background rounded-[20px] p-4 mb-5">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-[14px] text-muted-foreground">Предлагает</span>
+          <span className="text-[14px] text-muted-foreground">{copy.offers}</span>
           {searchedAt && (
             <span className="text-[12px] text-muted-foreground">
-              {formatSearchedAt(searchedAt)}
+              {formatSearchedAt(searchedAt, locale, lang)}
             </span>
           )}
         </div>
         <div className="text-[24px] font-bold text-foreground flex flex-wrap items-baseline gap-x-2">
           {displayFromAmount !== null ? (
-            <span>{displayFromAmount.toLocaleString('ru-RU')} {offer.fromCurrency}</span>
+            <span>{displayFromAmount.toLocaleString(locale)} {offer.fromCurrency}</span>
           ) : convertedAmount !== null ? (
             <span>
               {convertedAmount >= 100
-                ? Math.round(convertedAmount).toLocaleString('ru-RU')
-                : convertedAmount.toLocaleString('ru-RU', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}{' '}
+                ? Math.round(convertedAmount).toLocaleString(locale)
+                : convertedAmount.toLocaleString(locale, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}{' '}
               {offer.fromCurrency}
             </span>
           ) : (
@@ -138,13 +158,13 @@ export function MatchCard({ match, searchedAt }: MatchCardProps) {
           <span className="text-foreground">→</span>
           {displayToAmount !== null ? (
             <span className="font-semibold text-muted-foreground">
-              {displayToAmount.toLocaleString('ru-RU')} {offer.toCurrency}
+              {displayToAmount.toLocaleString(locale)} {offer.toCurrency}
             </span>
           ) : convertedAmount !== null && displayFromAmount !== null ? (
             <span className="font-semibold text-muted-foreground">
               {convertedAmount >= 100
-                ? Math.round(convertedAmount).toLocaleString('ru-RU')
-                : convertedAmount.toLocaleString('ru-RU', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}{' '}
+                ? Math.round(convertedAmount).toLocaleString(locale)
+                : convertedAmount.toLocaleString(locale, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}{' '}
               {offer.toCurrency}
             </span>
           ) : (
@@ -168,14 +188,14 @@ export function MatchCard({ match, searchedAt }: MatchCardProps) {
           className="w-full bg-primary text-primary-foreground h-[52px] rounded-[20px] font-bold text-[16px] flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
         >
           <MessageCircle className="w-4.5 h-4.5" />
-          Написать в личку
+          {copy.write}
         </button>}
         {isGroupMessageMatch && telegramMessageLink && <button
           onClick={() => openTelegramLink(telegramMessageLink)}
           className="w-full bg-accent text-foreground h-[52px] rounded-[20px] font-semibold text-[16px] flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
         >
           <ExternalLink className="w-4.5 h-4.5" />
-          Перейти к сообщению
+          {copy.openMessage}
         </button>}
       </div>
     </div>

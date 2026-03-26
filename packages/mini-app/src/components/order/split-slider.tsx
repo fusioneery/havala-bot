@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/i18n';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface MinExchangeAmountProps {
@@ -35,6 +36,7 @@ function formatAmount(num: number, maxDecimals = 6): string {
 }
 
 export function SplitSlider({ value, onChange, maxAmount, currency, toMaxAmount, toCurrency }: MinExchangeAmountProps) {
+  const { lang } = useI18n();
   const sliderRef = useRef<HTMLInputElement>(null);
   const max = parseAmount(maxAmount);
   const toMax = parseAmount(toMaxAmount);
@@ -64,16 +66,16 @@ export function SplitSlider({ value, onChange, maxAmount, currency, toMaxAmount,
   const validate = useCallback((val: string): boolean => {
     const num = parseAmount(val);
     if (num < 0) {
-      setError('Минимум 0');
+      setError(lang === 'ru' ? 'Минимум 0' : 'Minimum 0');
       return false;
     }
     if (num > max) {
-      setError(`Максимум ${formatAmount(max)}`);
+      setError(lang === 'ru' ? `Максимум ${formatAmount(max)}` : `Maximum ${formatAmount(max)}`);
       return false;
     }
     setError(null);
     return true;
-  }, [max]);
+  }, [lang, max]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;

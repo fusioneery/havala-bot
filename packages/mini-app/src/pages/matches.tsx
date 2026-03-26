@@ -1,6 +1,7 @@
 import { EmptyState } from '@/components/match/empty-state';
 import { MatchCard } from '@/components/match/match-card';
 import { useBackButton } from '@/hooks/use-back-button';
+import { useI18n } from '@/lib/i18n';
 import type { MatchResult } from '@hawala/shared';
 import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
@@ -13,7 +14,21 @@ interface MatchPageState {
 
 export default function MatchesPage() {
   const { offerId } = useParams<{ offerId: string }>();
+  const { lang } = useI18n();
   useBackButton('/');
+  const copy = lang === 'ru'
+    ? {
+        loading: 'Загрузка...',
+        title: 'Мэтчи',
+        skip: 'Пропустить →',
+        of: 'из',
+      }
+    : {
+        loading: 'Loading...',
+        title: 'Matches',
+        skip: 'Skip →',
+        of: 'of',
+      };
 
   const [data, setData] = useState<MatchPageState | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -44,7 +59,7 @@ export default function MatchesPage() {
   if (!data) {
     return (
       <div className="w-full h-dvh flex items-center justify-center bg-background">
-        <p className="text-muted-foreground">Загрузка...</p>
+        <p className="text-muted-foreground">{copy.loading}</p>
       </div>
     );
   }
@@ -57,7 +72,7 @@ export default function MatchesPage() {
       {hasMatches && (
         <header className="px-5 pt-2.5 pb-4">
           <h1 className="text-[17px] font-semibold tracking-tight">
-            Мэтчи ({data.matches.length})
+            {copy.title} ({data.matches.length})
           </h1>
         </header>
       )}
@@ -75,13 +90,13 @@ export default function MatchesPage() {
                 onClick={handleSwipeLeft}
                 className="text-muted-foreground text-[14px] font-medium py-2 px-6 rounded-full bg-card border border-border active:scale-95 transition"
               >
-                Пропустить →
+                {copy.skip}
               </button>
             </div>
 
             {/* Counter */}
             <div className="mt-3 text-center text-[13px] text-muted-foreground">
-              {currentIndex + 1} из {data.matches.length}
+              {currentIndex + 1} {copy.of} {data.matches.length}
             </div>
           </div>
         ) : (
