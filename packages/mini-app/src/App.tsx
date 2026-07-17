@@ -14,8 +14,10 @@ import FriendsPage from '@/pages/friends';
 import MatchesPage from '@/pages/matches';
 import type { MyOfferItem } from '@hawala/shared';
 import { Loader2 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { BrowserRouter, Outlet, Route, Routes, useNavigate } from 'react-router-dom';
+
+const GesturesPage = lazy(() => import('@/pages/gestures'));
 
 const IS_DEV = import.meta.env.VITE_DEV === 'true' || import.meta.env.VITE_DEV === '1';
 function useIsAuthenticated(): boolean | null {
@@ -195,6 +197,18 @@ function AppShell() {
             <Route path="/" element={<HomePage />} />
             <Route path="/feed" element={<FeedPage />} />
             <Route path="/friends" element={<FriendsPage />} />
+            <Route
+              path="/gestures"
+              element={(
+                <Suspense fallback={(
+                  <div className="flex h-dvh w-full items-center justify-center bg-background">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                )}>
+                  <GesturesPage />
+                </Suspense>
+              )}
+            />
           </Route>
           <Route path="/about" element={<AboutPage />} />
           <Route path="/create" element={<CreateOrderPage />} />

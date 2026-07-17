@@ -1,6 +1,6 @@
 import { useI18n } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
-import { Inbox, Search, Users } from 'lucide-react';
+import { Hand, Inbox, Search, Users } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 export function BottomNav() {
@@ -11,25 +11,29 @@ export function BottomNav() {
     ? [
         { key: 'offers', label: 'Заявки', icon: Inbox, path: '/' },
         { key: 'friends', label: 'Друзья', icon: Users, path: '/friends' },
+        { key: 'gestures', label: 'Жесты', icon: Hand, path: '/gestures' },
       ]
     : [
         { key: 'offers', label: 'Offers', icon: Inbox, path: '/' },
         { key: 'friends', label: 'Friends', icon: Users, path: '/friends' },
+        { key: 'gestures', label: 'Gestures', icon: Hand, path: '/gestures' },
       ];
 
   const activeTab = tabs.find((t) => t.path === pathname)?.key ?? 'offers';
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 flex flex-row items-center justify-center px-4 max-[389px]:px-3 pb-[max(env(safe-area-inset-bottom,24px),24px)] pointer-events-none gap-4">
+    <div className="fixed bottom-0 left-0 right-0 z-50 flex flex-row items-center justify-center px-4 max-[389px]:px-3 pb-[max(env(safe-area-inset-bottom,24px),24px)] pointer-events-none gap-3 max-[389px]:gap-2">
       <button
         onClick={() => navigate('/create')}
-        className="pointer-events-auto flex-1 flex items-center justify-center gap-2 h-[64px] px-4 rounded-[32px] glass-btn-cta font-bold text-[16px] active:scale-[0.96] transition-all max-[389px]:h-[52px] max-[389px]:px-5 max-[389px]:rounded-[26px] max-[389px]:text-[15px] max-[389px]:gap-1.5"
+        className="pointer-events-auto min-w-0 flex-1 flex items-center justify-center gap-2 h-[64px] px-4 rounded-[32px] glass-btn-cta font-bold text-[16px] active:scale-[0.96] transition-all max-[389px]:h-[52px] max-[389px]:px-3 max-[389px]:rounded-[26px] max-[389px]:text-[14px] max-[389px]:gap-1.5 max-[340px]:w-[52px] max-[340px]:flex-none max-[340px]:px-0"
       >
         <Search className="w-4.5 h-4.5 max-[389px]:w-4 max-[389px]:h-4" strokeWidth={2.5} />
-        {lang === 'ru' ? 'Найти обмен' : 'Find exchange'}
+        <span className="truncate max-[340px]:sr-only">
+          {lang === 'ru' ? 'Найти обмен' : 'Find exchange'}
+        </span>
       </button>
       {/* Tab bar — liquid glass */}
-      <nav className="pointer-events-auto shrink-0 h-[64px] rounded-[32px] px-3 flex items-center gap-2 relative glass-nav max-[389px]:h-[52px] max-[389px]:rounded-[26px] max-[389px]:px-2 max-[389px]:gap-1">
+      <nav className="pointer-events-auto shrink-0 h-[64px] rounded-[32px] px-2 flex items-center gap-0 relative glass-nav max-[389px]:h-[52px] max-[389px]:rounded-[26px] max-[389px]:px-1.5">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.key;
           const Icon = tab.icon;
@@ -37,7 +41,7 @@ export function BottomNav() {
             <button
               key={tab.key}
               onClick={() => navigate(tab.path)}
-              className="relative flex flex-col items-center justify-center w-[64px] max-[389px]:w-[56px] h-full z-10 group gap-1 max-[389px]:gap-0.5 min-w-0"
+              className="relative flex flex-col items-center justify-center w-[56px] max-[389px]:w-[44px] h-full z-10 group gap-1 max-[389px]:gap-0.5 min-w-0"
             >
               <Icon
                 className={cn(
