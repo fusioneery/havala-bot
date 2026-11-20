@@ -14,7 +14,7 @@ primary_region = "ams"  # Amsterdam, change to your preferred region
 [env]
   NODE_ENV = "production"
   PORT = "8080"
-  DB_FILE_NAME = "/app/data/hawala.db"
+  DATA_DIR = "/app/data"
 
 [http_service]
   internal_port = 8080

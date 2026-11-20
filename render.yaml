@@ -18,7 +18,7 @@ services:
     # Instance type (free, starter, standard, pro)
     plan: starter
     
-    # Persistent disk for SQLite (Starter plan or higher required)
+    # Persistent disk for avatars (Starter plan or higher required)
     disk:
       name: hawala-data
       mountPath: /app/data
@@ -33,8 +33,10 @@ services:
         value: production
       - key: PORT
         value: "10000"  # Render uses port 10000 by default
-      - key: DB_FILE_NAME
-        value: /app/data/hawala.db
+      - key: DATA_DIR
+        value: /app/data
+      - key: DATABASE_URL
+        sync: false
       
       # Secrets - set these in Render Dashboard
       - key: BOT_TOKEN
