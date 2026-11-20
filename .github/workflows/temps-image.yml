@@ -31,6 +31,13 @@ jobs:
       - run: bun test packages/bot/src/__tests__
         env:
           TEST_DATABASE_URL: postgresql://hawala:ci-test@localhost:5432/hawala_test
+      - name: Verify a legacy SQLite import on PostgreSQL 17
+        env:
+          PGPASSWORD: ci-test
+          TEST_IMPORT_URL: postgresql://hawala:ci-test@localhost:5432/hawala_import_test
+        run: |
+          createdb -h localhost -U hawala hawala_import_test
+          bun packages/bot/scripts/check-sqlite-import.ts
       - run: docker build -t "hawala-bot:$GITHUB_SHA" .
       - if: github.ref == 'refs/heads/main'
         run: docker save "hawala-bot:$GITHUB_SHA" | gzip -1 > /tmp/hawala-image.tar.gz

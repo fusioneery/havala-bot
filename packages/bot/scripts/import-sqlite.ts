@@ -47,9 +47,11 @@ try {
         })));
         const stored = await tx`INSERT INTO ${tx(table)} ${tx(converted, ...keys)} RETURNING *`;
         const result = new Map(stored.map(r => [r.id,r]));
-        for (const row of converted) for (const key of keys) {
+        for (const row of converted) for (const {column_name: key, data_type: type} of columns) {
           const actual = result.get(row.id)?.[key];
-          if ((actual instanceof Date ? actual.toISOString() : actual) !== row[key]) {
+          const normalized = actual !== null && type === 'timestamp with time zone'
+            ? new Date(actual).toISOString() : actual;
+          if (normalized !== row[key]) {
             throw new Error(`Value mismatch in ${table}.${key}`);
           }
         }
