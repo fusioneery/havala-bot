@@ -161,11 +161,11 @@ MINI_APP_URL=https://your-app.up.railway.app
 
 ### Persistent Storage
 
-Railway ephemeral filesystem resets on each deploy. For SQLite persistence:
+Railway ephemeral filesystem resets on each deploy. For avatar persistence:
 
 1. Go to your project → **Add New** → **Volume**
 2. Mount path: `/app/data`
-3. Set `DB_FILE_NAME=/app/data/hawala.db` in variables
+3. Set `DATA_DIR=/app/data` in variables
 
 ### Custom Domain
 
@@ -242,7 +242,7 @@ fly auth login
 # Launch app (creates fly.toml if not present)
 fly launch --no-deploy
 
-# Create persistent volume for SQLite
+# Create persistent volume for avatars
 fly volumes create hawala_data --region ams --size 1
 
 # Set secrets (required)
@@ -261,7 +261,7 @@ The `fly.toml` file is pre-configured with:
 
 - **Region:** Amsterdam (`ams`) — change `primary_region` as needed
 - **Port:** 8080 (Fly.io default)
-- **Volume:** Mounted at `/data` for SQLite
+- **Volume:** Mounted at `/app/data` for avatars
 - **Auto-stop:** Disabled (keeps bot running for long-polling)
 - **Health check:** `/api/health` every 30s
 
@@ -295,7 +295,7 @@ fly deploy --region fra  # Frankfurt
 # Available regions: ams, cdg, fra, lhr, ord, sea, sin, syd, etc.
 ```
 
-> **Note:** SQLite requires single-region deployment. For multi-region, consider PostgreSQL.
+> **Note:** Run one Telegram polling replica.
 
 ---
 
@@ -330,14 +330,14 @@ BOT_TOKEN=your_token
 OPENROUTER_API_KEY=your_key
 TRUSTED_GROUP_IDS=-1001234567890
 MINI_APP_URL=https://your-service.onrender.com
-DB_FILE_NAME=/app/data/hawala.db
+DATA_DIR=/app/data
 ```
 
 > **Note:** Render sets `PORT` automatically (usually 10000). Don't override it.
 
 ### Persistent Disk
 
-Render's free tier has **ephemeral storage** — data is lost on redeploy. For SQLite persistence:
+Render's free tier has **ephemeral storage** — data is lost on redeploy. For avatar persistence:
 
 - Use **Starter plan** ($7/mo) or higher
 - Attach a disk mounted at `/app/data`
@@ -363,7 +363,7 @@ The `render.yaml` file defines the entire infrastructure. To use it:
 
 ## Database Persistence
 
-The bot uses SQLite stored at `/app/data/hawala.db`. **Always** mount a persistent volume to `/app/data` to avoid data loss:
+Set the private `DATABASE_URL` to the application-owned PostgreSQL database. The bot runs its migrations on startup. Downloaded avatars use a persistent volume at `DATA_DIR`:
 
 | Platform | How to persist |
 |----------|---------------|
@@ -374,15 +374,15 @@ The bot uses SQLite stored at `/app/data/hawala.db`. **Always** mount a persiste
 | Fly.io | `fly volumes create` + mount in `fly.toml` |
 | Render | Add Disk at `/app/data` (Starter plan+) |
 
-### Backup the database
+### Migrate an existing SQLite installation
 
-```bash
-# Docker
-docker cp hawala-bot:/app/data/hawala.db ./backup.db
+Stop the SQLite poller and use SQLite's backup command to create a consistent snapshot. With `DATABASE_URL` set to an empty application-owned PostgreSQL database, run:
 
-# Docker Compose
-docker compose cp hawala-bot:/app/data/hawala.db ./backup.db
+```sh
+bun packages/bot/scripts/import-sqlite.ts /path/to/hawala.snapshot.db
 ```
+
+The importer checks foreign keys, row values and ID sequences before committing. Keep the snapshot and avatar volume through cutover. Use PostgreSQL backups for subsequent database recovery.
 
 ---
 
@@ -426,7 +426,7 @@ Health checks are configured in:
 
 1. Ensure volume is mounted correctly
 2. Check permissions: container runs as non-root user (uid 1001)
-3. Verify `DB_FILE_NAME` path matches volume mount
+3. Verify `DATA_DIR` path matches volume mount
 
 ### Health check failing
 
@@ -438,7 +438,7 @@ Health checks are configured in:
 
 - **Port binding:** Don't set `PORT` manually; Railway provides it
 - **Build fails:** Check that `bun.lock` is committed
-- **Volume not persisting:** Ensure volume is attached and `DB_FILE_NAME` points to it
+- **Volume not persisting:** Ensure volume is attached and `DATA_DIR` points to it
 
 ### Coolify-specific issues
 
@@ -451,14 +451,14 @@ Health checks are configured in:
 - **Volume not found:** Run `fly volumes create hawala_data --region ams --size 1`
 - **Port mismatch:** Fly.io uses port 8080 by default; ensure `PORT=8080` in env
 - **Machine stops:** Set `auto_stop_machines = false` in `fly.toml`
-- **Database lost:** Check volume is mounted at `/app/data` and `DB_FILE_NAME=/app/data/hawala.db`
+- **Database unavailable:** Verify the private PostgreSQL connection and credentials
 - **Deployment stuck:** Run `fly logs` to see what's happening
 
 ### Render-specific issues
 
 - **Data lost on deploy:** Free tier is ephemeral; upgrade to Starter for persistent disk
 - **Port binding:** Render uses port 10000; don't override `PORT`
-- **Disk not working:** Ensure disk is attached to `/app/data` and `DB_FILE_NAME=/app/data/hawala.db`
+- **Disk not working:** Ensure disk is attached to `/app/data` and `DATA_DIR=/app/data`
 - **Blueprint not applying:** Check `render.yaml` syntax; secrets need manual entry
 
 ---
@@ -502,4 +502,4 @@ Minimum recommended resources:
 - **Memory:** 256 MB (512 MB recommended)
 - **Storage:** 100 MB + database size
 
-The bot is lightweight thanks to Bun runtime and SQLite.
+The bot is lightweight thanks to Bun runtime.

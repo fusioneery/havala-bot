@@ -4,7 +4,7 @@ import path from 'node:path';
 import { config } from '../config';
 
 /** Directory where avatar images are stored on disk */
-const AVATARS_DIR = path.resolve(path.dirname(config.dbFileName), 'avatars');
+const AVATARS_DIR = path.resolve(config.dataDir, 'avatars');
 
 // Ensure directory exists at startup
 mkdirSync(AVATARS_DIR, { recursive: true });

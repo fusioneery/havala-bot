@@ -1,21 +1,27 @@
-import { Database } from 'bun:sqlite';
-import { drizzle, type BunSQLiteDatabase } from 'drizzle-orm/bun-sqlite';
-import { migrate } from 'drizzle-orm/bun-sqlite/migrator';
-import { resolve } from 'path';
+import postgres from 'postgres';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import { migrate } from 'drizzle-orm/postgres-js/migrator';
+import { resolve } from 'node:path';
 import * as schema from '../../db/schema';
 
-export type TestDb = BunSQLiteDatabase<typeof schema>;
+async function openTestDatabase() {
+  const url = process.env.TEST_DATABASE_URL;
+  if (!url || new URL(url).pathname !== '/hawala_test') {
+    throw new Error('TEST_DATABASE_URL must point to a dedicated hawala_test database');
+  }
+  const client = postgres(url, { max: 1, idle_timeout: 1 });
+  const db = drizzle(client, { schema });
+  await migrate(db, { migrationsFolder: resolve(import.meta.dir, '../../../drizzle-pg') });
+  return { client, db };
+}
 
-export function createTestDb(): TestDb {
-  const sqlite = new Database(':memory:');
-  sqlite.exec('PRAGMA journal_mode = WAL;');
-  sqlite.exec('PRAGMA foreign_keys = ON;');
+let connection: ReturnType<typeof openTestDatabase> | undefined;
+export type TestDb = Awaited<ReturnType<typeof openTestDatabase>>['db'];
 
-  const testDb = drizzle(sqlite, { schema });
-  const migrationsFolder = resolve(import.meta.dir, '../../../drizzle');
-  migrate(testDb, { migrationsFolder });
-
-  return testDb;
+export async function createTestDb(): Promise<TestDb> {
+  const { client, db } = await (connection ??= openTestDatabase());
+  await client`TRUNCATE users, trusted_groups, blacklist RESTART IDENTITY CASCADE`;
+  return db;
 }
 
 // ─── Seed helpers ──────────────────────────────

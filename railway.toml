@@ -24,7 +24,7 @@ watchPatterns = [
 [deploy]
 startCommand = "bun packages/bot/src/index.ts"
 
-# Number of replicas (1 for stateful SQLite app)
+# Number of replicas (1 for Telegram long polling)
 numReplicas = 1
 
 # Health check configuration

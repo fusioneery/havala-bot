@@ -23,8 +23,8 @@ import * as schema from '../db/schema';
 
 let db: TestDb;
 
-beforeEach(() => {
-  db = createTestDb();
+beforeEach(async () => {
+  db = await createTestDb();
   resetCounters();
 });
 

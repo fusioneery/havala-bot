@@ -9,8 +9,8 @@ import { findMatchingUserOffers, findMatchingGroupOffers } from './helpers/match
 
 let db: TestDb;
 
-beforeEach(() => {
-  db = createTestDb();
+beforeEach(async () => {
+  db = await createTestDb();
   resetCounters();
 });
 

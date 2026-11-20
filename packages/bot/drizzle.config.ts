@@ -9,11 +9,10 @@ const dir = path.dirname(fileURLToPath(import.meta.url));
 loadEnv({ path: path.resolve(dir, '../../.env') });
 
 export default defineConfig({
-  out: './drizzle',
+  out: './drizzle-pg',
   schema: './src/db/schema.ts',
-  dialect: 'sqlite',
+  dialect: 'postgresql',
   dbCredentials: {
-    // Resolve to absolute path so drizzle and bot use the same DB regardless of cwd
-    url: path.resolve(dir, process.env.DB_FILE_NAME || './data/hawala.db'),
+    url: process.env.DATABASE_URL || '',
   },
 });

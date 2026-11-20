@@ -18,7 +18,7 @@ The bot never touches money. It only connects people.
 - **Runtime:** [Bun](https://bun.sh)
 - **Bot framework:** [grammY](https://grammy.dev)
 - **API server:** [Fastify](https://fastify.dev)
-- **Database:** SQLite via [Drizzle ORM](https://orm.drizzle.team)
+- **Database:** PostgreSQL 17 via [Drizzle ORM](https://orm.drizzle.team)
 - **LLM parsing:** [OpenRouter](https://openrouter.ai)
 - **Mini App:** React 19, Vite, Tailwind CSS 4, Framer Motion
 - **Exchange rates:** CoinGecko (crypto), Open Exchange Rates (fiat), [Vas3k.Kurs](https://kurs.vas3k.club) (crypto<->fiat)

@@ -1,0 +1,50 @@
+name: Verify and build the Hawala image
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: hawala
+          POSTGRES_PASSWORD: ci-test
+          POSTGRES_DB: hawala_test
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 3s --health-timeout 3s --health-retries 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - run: bun install --frozen-lockfile --ignore-scripts
+      - run: bun run --filter @hawala/bot typecheck
+      - run: bun test packages/bot/src/__tests__
+        env:
+          TEST_DATABASE_URL: postgresql://hawala:ci-test@localhost:5432/hawala_test
+      - name: Verify a legacy SQLite import on PostgreSQL 17
+        env:
+          PGPASSWORD: ci-test
+          TEST_IMPORT_URL: postgresql://hawala:ci-test@localhost:5432/hawala_import_test
+        run: |
+          createdb -h localhost -U hawala hawala_import_test
+          bun packages/bot/scripts/check-sqlite-import.ts
+      - run: docker build -t "hawala-bot:$GITHUB_SHA" .
+      - if: github.ref == 'refs/heads/main'
+        run: docker save "hawala-bot:$GITHUB_SHA" | gzip -1 > /tmp/hawala-image.tar.gz
+      - uses: actions/upload-artifact@v4
+        if: github.ref == 'refs/heads/main'
+        with:
+          name: hawala-image-${{ github.sha }}
+          path: /tmp/hawala-image.tar.gz
+          compression-level: 0
+          retention-days: 5

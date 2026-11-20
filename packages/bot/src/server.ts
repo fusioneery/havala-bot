@@ -2,6 +2,8 @@ import Fastify, { type FastifyError } from 'fastify';
 import cors from '@fastify/cors';
 import fastifyStatic from '@fastify/static';
 import { config } from './config';
+import { sql } from 'drizzle-orm';
+import { db } from './db';
 import { contactRoutes } from './routes/contacts';
 import { groupRoutes } from './routes/groups';
 import { feedRoutes } from './routes/feed';
@@ -73,7 +75,14 @@ export async function createServer() {
   });
 
   // Health check
-  server.get('/api/health', async () => ({ status: 'ok' }));
+  server.get('/api/health', async (_request, reply) => {
+    try {
+      await db.execute(sql`SELECT 1`);
+      return { status: 'ok' };
+    } catch {
+      return reply.code(503).send({ status: 'unavailable' });
+    }
+  });
 
   // Register route plugins
   server.register(feedRoutes, { prefix: '/api/feed' });
