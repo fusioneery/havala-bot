@@ -1,21 +1,12 @@
-import { drizzle } from 'drizzle-orm/bun-sqlite';
-import { migrate } from 'drizzle-orm/bun-sqlite/migrator';
-import { Database } from 'bun:sqlite';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import { migrate } from 'drizzle-orm/postgres-js/migrator';
+import postgres from 'postgres';
+import { resolve } from 'node:path';
 import { config } from '../config';
 import * as schema from './schema';
 
-// Ensure data directory exists
-import { mkdirSync } from 'fs';
-import { dirname, resolve } from 'path';
-mkdirSync(dirname(config.dbFileName), { recursive: true });
-
-const sqlite = new Database(config.dbFileName);
-sqlite.exec('PRAGMA journal_mode = WAL;');
-sqlite.exec('PRAGMA foreign_keys = ON;');
-
-export const db = drizzle(sqlite, { schema });
+if (!config.databaseUrl) throw new Error('DATABASE_URL is required');
+export const db = drizzle(postgres(config.databaseUrl), { schema });
 export { schema };
 
-// Auto-run migrations on startup (creates tables if they don't exist)
-const migrationsFolder = resolve(import.meta.dir, '../../drizzle');
-migrate(db, { migrationsFolder });
+await migrate(db, { migrationsFolder: resolve(import.meta.dir, '../../drizzle-pg') });

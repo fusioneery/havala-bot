@@ -20,13 +20,13 @@ services:
       - "${PORT:-3000}:${PORT:-3000}"
     
     volumes:
-      # Persistent SQLite database
+      # Persistent avatars
       - hawala-data:/app/data
     
     environment:
       - NODE_ENV=production
       - PORT=${PORT:-3000}
-      - DB_FILE_NAME=/app/data/hawala.db
+      - DATA_DIR=/app/data
     
     env_file:
       - .env

@@ -8,7 +8,7 @@ WORKDIR /app
 COPY . .
 
 # Install dependencies and build mini-app
-# --ignore-scripts: skip better-sqlite3 native build (devDep for drizzle-kit only; runtime uses bun:sqlite)
+# --ignore-scripts: skip better-sqlite3 native build (legacy migration tooling)
 RUN bun install --frozen-lockfile --ignore-scripts \
     && cd packages/mini-app && bun run vite build
 
@@ -17,12 +17,12 @@ RUN rm -rf packages/mini-app/src packages/mini-app/public packages/mini-app/*.co
     && rm -rf .git .github .vscode .cursor .dmux-hooks \
     && rm -rf *.md docs
 
-# Create data directory for SQLite
+# Create the persistent avatar directory
 RUN mkdir -p /app/data
 
 ENV NODE_ENV=production
 ENV PORT=3000
-ENV DB_FILE_NAME=/app/data/hawala.db
+ENV DATA_DIR=/app/data
 
 EXPOSE 3000
 
